@@ -1,3 +1,7 @@
+# Created by https://www.toptal.com/developers/gitignore/api/coq,visualstudiocode,ocaml
+# Edit at https://www.toptal.com/developers/gitignore?templates=coq,visualstudiocode,ocaml
+
+### Coq ###
 .*.aux
 .*.d
 *.a
@@ -10,6 +14,7 @@
 *.glob
 *.ml.d
 *.ml4.d
+*.mlg.d
 *.mli.d
 *.mllib.d
 *.mlpack.d
@@ -20,7 +25,7 @@
 *.vo
 *.vok
 *.vos
-.coq-native/
+.coq-native
 .csdp.cache
 .lia.cache
 .nia.cache
@@ -31,3 +36,59 @@ lia.cache
 nia.cache
 nlia.cache
 nra.cache
+native_compute_profile_*.data
+
+# generated timing files
+*.timing.diff
+*.v.after-timing
+*.v.before-timing
+*.v.timing
+time-of-build-after.log
+time-of-build-before.log
+time-of-build-both.log
+time-of-build-pretty.log
+
+### OCaml ###
+*.annot
+
+# ocamlbuild working directory
+_build/
+
+# ocamlbuild targets
+*.byte
+
+# oasis generated files
+setup.data
+setup.log
+
+# Merlin configuring file for Vim and Emacs
+.merlin
+
+# Dune generated files
+*.install
+
+# Local OPAM switch
+_opam/
+
+### VisualStudioCode ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+### VisualStudioCode Patch ###
+# Ignore all local history of files
+.history
+.ionide
+
+# Support for Project snippet scope
+
+# End of https://www.toptal.com/developers/gitignore/api/coq,visualstudiocode,ocaml
