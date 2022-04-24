@@ -7,12 +7,6 @@ From Coq Require Export Lists.List.
 Export ListNotations.
 From Coq Require Export Permutation.
 
-
-
-
-
-
-
 Fixpoint lookup (i : nat) (l : list nat) := 
     match l with
     | [] => 0
