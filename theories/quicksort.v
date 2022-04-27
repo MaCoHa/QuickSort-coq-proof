@@ -10,23 +10,23 @@ From Coq Require Export Permutation.
 From Coq Require Export Numbers.NatInt.NZDiv.
 
 (*Arraylist code*)
-Fixpoint lookup (i : nat) (l : list nat) := 
+Fixpoint lookup (l : list nat) (i : nat) := 
     match l with
     | [] => 0
-    | h :: t => if i <=? 0 then h else lookup (i-1) t
+    | h :: t => if i <=? 0 then h else lookup t (i-1)
     end.
    
 
 Example lookup_example1 :
-    lookup 3 [2;3;4;5;1;2] = 5.
+    lookup [2;3;4;5;1;2] 3= 5.
 Proof. simpl. reflexivity. Qed.
 
 Example lookup_example_empty_list :
-    lookup 3 [] = 0.
+    lookup [] 3= 0.
 Proof. simpl. reflexivity. Qed.
 
 Example lookup_example_higher_than_list :
-    lookup 10 [2;3;4;5;1;2] = 0.
+    lookup [2;3;4;5;1;2] 10 = 0.
 Proof. simpl. reflexivity. Qed.
 
 
@@ -61,7 +61,7 @@ Definition fst3 (tuple : (list nat*nat*nat)) : list nat :=
     end.
 
 Definition swap (l : list nat) (i1 : nat) (i2 : nat) : list nat :=
-    insert (lookup i2 l) i1 (insert (lookup i1 l) i2 l).
+    insert (lookup l i2) i1 (insert (lookup l i1) i2 l).
 
 Example swap_example1:
     swap [1;2;3;4] 0 3 = [4;2;3;1].
@@ -87,16 +87,27 @@ Proof.
     reflexivity.
 Qed.
 
+Fixpoint partition_left (l : list nat) (pivot : nat) (lo : nat) (hi : nat) : nat :=
+(* if ((lookup l lo <? pivot) && (lo <? hi)) then partition_left l pivot (lo+1) hi else lo *)
+    match (lo,hi) with
+    | (@hi,_) => lo
+    |  lo,hi => if (lookup l lo <? pivot) then partition_left l pivot (lo+1) hi else lo
+    end
+    .   
+
 
 (*Quicksort code*)
-Fixpoint partition_left (l : list nat) (pivot : nat) (lo : nat) (hi : nat) : nat :=
-    if ((lookup l lo < pivot) && (lo < hi)) then partition_left l pivot (lo+1) else lo
-.    
-
-
 Fixpoint partition_right (l : list nat) (pivot : nat) (lo : nat) (hi : nat) : nat :=
-    if ((lookup l hi > pivot) && (lo < hi)) then partition_right l pivot (hi-1) else hi
-    
+    if ((pivot <? lookup l hi ) && (lo <? hi)) then partition_right l pivot lo (hi-1) else hi
+.
+
+
+
+
+
+
+
+
 
 
 
