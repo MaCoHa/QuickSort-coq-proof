@@ -9,42 +9,42 @@ From Coq Require Export Permutation.
 From Coq Require Export Numbers.NatInt.NZDiv.
 
 
-Fixpoint lookup (i : nat) (l : list nat) := 
+Fixpoint lookup (l : list nat) (i : nat) := 
     match l with
     | [] => 0
-    | h :: t => if i <=? 0 then h else lookup (i-1) t
+    | h :: t => if i <=? 0 then h else lookup t (i-1)
     end.
    
 
 Example lookup_example1 :
-    lookup 3 [2;3;4;5;1;2] = 5.
+    lookup [2;3;4;5;1;2] 3 = 5.
 Proof. simpl. reflexivity. Qed.
 
 Example lookup_example_empty_list :
-    lookup 3 [] = 0.
+    lookup [] 3 = 0.
 Proof. simpl. reflexivity. Qed.
 
 Example lookup_example_higher_than_list :
-    lookup 10 [2;3;4;5;1;2] = 0.
+    lookup [2;3;4;5;1;2] 10 = 0.
 Proof. simpl. reflexivity. Qed.
 
 
-Fixpoint insert (elem : nat) (index : nat) (l : list nat) :=
+Fixpoint insert (l : list nat) (index : nat) (elem : nat) :=
 match (index, l) with
 | (0, x::xs) => elem :: xs
 | (0, []) => [elem] (* should never happen *)
-| (n, x::xs) => x :: (insert elem (index-1) xs)
+| (n, x::xs) => x :: (insert xs (index-1) elem)
 | (n, []) => [elem] (* should never happen *)
 end.
 
 Example insert_example1:
-    insert 3 1 [2;2;2] = [2;3;2].
+    insert [2;2;2] 1 3 = [2;3;2].
 Proof.
     trivial.
 Qed.
 
 Example insert_example2:
-    insert 3 0 [2] = [3].
+    insert [2] 0 3 = [3].
 Proof.
     trivial.
 Qed.
@@ -58,7 +58,7 @@ Definition fst3 (tuple : (list nat*nat*nat)) : list nat :=
     end.
 
 Definition swap (l : list nat) (i1 : nat) (i2 : nat) : list nat :=
-    insert (lookup i2 l) i1 (insert (lookup i1 l) i2 l).
+    insert (insert l i2 (lookup l i1)) i1 (lookup l i2).
 
 Example swap_example1:
     swap [1;2;3;4] 0 3 = [4;2;3;1].
