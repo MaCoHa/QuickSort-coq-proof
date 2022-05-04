@@ -88,26 +88,16 @@ Proof.
     reflexivity.
 Qed.
 
+
+(*Quicksort code*)
+
 Program Fixpoint partition_left (l : list nat) (pivot : nat) (lo : nat) (hi : nat) {measure (hi-lo)} : nat :=
 if ((lookup l lo <? pivot) && (lo <? hi)) then partition_left l pivot (lo+1) hi else lo
 .
 
-
-(*Quicksort code*)
-Fixpoint partition_right (l : list nat) (pivot : nat) (lo : nat) (hi : nat) : nat :=
+Program Fixpoint partition_right (l : list nat) (pivot : nat) (lo : nat) (hi : nat) {measure (hi-lo)} : nat :=
     if ((pivot <? lookup l hi ) && (lo <? hi)) then partition_right l pivot lo (hi-1) else hi
 .
-
-
-
-
-
-
-
-
-
-
-
 
 Fixpoint partition2 (l : list nat) (pivot : nat) (lo : nat) (hi : nat) : list nat :=
     (*
@@ -117,12 +107,10 @@ Fixpoint partition2 (l : list nat) (pivot : nat) (lo : nat) (hi : nat) : list na
     | ((lookup hi l < pivot) && (lookup lo l < pivot)) => partition2 l pivot (lo+1) (hi)
     | ((lookup hi l < pivot) && (lookup lo l > pivot)) => partition2 (swap l lo hi) pivot (lo+1) (hi-1)
     *)
-
-
     match ((partition_left l pivot lo hi), (partition_right l pivot lo hi)) with
     | (lo, hi) => if lo < hi then partition2 (swap l lo hi) pivot (lo+1) (hi-1) else l
 
-    end
+    end.
 
 
 
