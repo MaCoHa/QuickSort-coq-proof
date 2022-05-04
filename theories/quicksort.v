@@ -8,6 +8,7 @@ From Coq Require Export Lists.List.
 Export ListNotations.
 From Coq Require Export Permutation.
 From Coq Require Export Numbers.NatInt.NZDiv.
+Require Coq.Program.Wf.
 
 (*Arraylist code*)
 Fixpoint lookup (l : list nat) (i : nat) := 
@@ -55,7 +56,7 @@ Qed.
 Definition randnat (seed : nat) (bound : nat) : nat :=
     (seed*31+7) mod bound.
 
-Definition fst3 (tuple : (list nat*nat*nat)) : list nat :=
+Definition fst3 (tuple : ((list nat)*nat*nat)) : list nat :=
     match tuple with
     | (a,b,c) => a
     end.
@@ -87,13 +88,9 @@ Proof.
     reflexivity.
 Qed.
 
-Fixpoint partition_left (l : list nat) (pivot : nat) (lo : nat) (hi : nat) : nat :=
-(* if ((lookup l lo <? pivot) && (lo <? hi)) then partition_left l pivot (lo+1) hi else lo *)
-    match (lo,hi) with
-    | (@hi,_) => lo
-    |  lo,hi => if (lookup l lo <? pivot) then partition_left l pivot (lo+1) hi else lo
-    end
-    .   
+Program Fixpoint partition_left (l : list nat) (pivot : nat) (lo : nat) (hi : nat) {measure (hi-lo)} : nat :=
+if ((lookup l lo <? pivot) && (lo <? hi)) then partition_left l pivot (lo+1) hi else lo
+.
 
 
 (*Quicksort code*)
