@@ -190,7 +190,7 @@ Program Fixpoint partition (l : list nat) (pivot : nat) (lo : nat) (initial_lo :
     | (i, j) => match j <=? i with
         | false => match (j <=? hi) with
             | true => match (lo <=? i) with 
-                | true => partition (swap l i j) pivot (i+1) initial_lo (j-1)
+                | true => partition (swap l i j) pivot i initial_lo j
                 | false => (j,[0]) (* will never happen *)
                 end
             | false => (j,[1]) (* will never happen *)
@@ -225,6 +225,12 @@ symmetry in Heq_anonymous. apply andb_true_iff in Heq_anonymous. destruct  Heq_a
 apply Nat.leb_le in H0.
 lia.
 Qed.
+
+Compute (partition_left [3;4;7;1;2;5;6;8;9] 3 0 8).
+Compute (partition_right [3;4;7;1;2;5;6;8;9] 3 0 8).
+Compute (partition [3;4;7;1;2;5;6;8;9] 3 0 0 8).
+
+Compute (sort [3;4;7;1;2;5;6;8;9] 0 8).
 
 Definition quicksort (l : list nat) : list nat :=
     match (shuffle l) with
