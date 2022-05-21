@@ -160,7 +160,9 @@ Lemma partition_left_sort :
 forall l pivot lo hi,
 lo < hi -> hi < List.length l -> lo <= pivot -> pivot <= hi -> ((partition_left l pivot lo hi) = lo) \/ (pivot < (partition_left l pivot lo hi)). 
 Proof.
-    intros l pivot lo hi H H1 H2 H3. left. unfold partition_left. unfold partition_left_func. admit.
+    intros l pivot lo hi H H1 H2 H3. right. induction pivot.
+    - unfold partition_left. admit.
+    - admit.
 Admitted.
 
 Program Fixpoint partition_right (l : list nat) (pivot : nat) (lo : nat) (hi : nat) {measure (hi-lo)} : nat :=
@@ -286,6 +288,18 @@ Definition sorted'' (al : list nat) := forall i j,
     Definition is_a_sorting_algorithm (f: list nat -> list nat) := forall al,
     Permutation al (f al) /\ sorted (f al).
 
+
+(***************************************
+            Definition for bdestruct from Vfa Perm.v file
+****************************************)
+Ltac bdestruct X :=
+    let H := fresh in let e := fresh "e" in
+     evar (e: Prop);
+     assert (H: reflect e X); subst e;
+      [eauto with bdestruct
+      | destruct H as [H|H];
+         [ | try first [apply not_lt in H | apply not_le in H]]].
+  
 (* ################################################################# *)
 (** * Proof of Correctness *)
 
@@ -313,26 +327,49 @@ Lemma perm_shuffle_list:
 Proof.
     intros *. induction l.
     - apply perm_nil.
-    - unfold shuffle.
-    admit.
+    - induction (shuffle (a :: l)).
 Admitted.
 
 Lemma Sort_btw_index :
     forall l lo hi, 
    indexSorted (sort l lo hi) lo hi.
 Proof.
-    intros l lo hi. destruct (lo <? hi).
-    - unfold sort. unfold sort_func. apply indSorted_sort. unfold sublist_sorted. intros. destruct l.
-    
+    intros l lo hi. induction sort.
+    - apply indSorted_sorted. apply sorted_nil.
+    - apply indSorted_sort. unfold sublist_sorted. intros H H1. induction sublist.
+        + apply sorted_nil.
+        + destruct l1.
+            * apply sorted_1.
+            * apply sorted_cons.
+                -- admit.
+                -- apply IHl1.
+    Admitted.
+
+Lemma start_end_sort :
+    forall l lo hi,
+    lo = 0 -> hi = (List.length l) - 1 ->  indexSorted l lo hi -> sorted l .
+Proof.
+    intros l lo hi H H1 H2. induction l.
+    - apply sorted_nil.
+    - destruct l.
+        + apply sorted_1.
+        + apply sorted_cons.
+            * apply indSorted_sort in H2.
+
+
     
 Search(length _).
 Lemma quicksort_sortes:
     forall l , sorted (quicksort l).
 Proof.
-    intros l. induction l. simpl.
+    intros l. induction l.
 - trivial.
 - unfold quicksort. induction (shuffle (a :: l)).
     * trivial.
-    * simpl. unfold sort. unfold sort_func. 
+    * simpl. induction (sort(a0 :: l0) 0 (length l0 - 0)).
+        + apply sorted_nil.
+        + induction (sort l0 0 (length l0 - 1)).
+            -- 
+Admitted.
 
     
