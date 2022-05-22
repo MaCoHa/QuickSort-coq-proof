@@ -59,13 +59,21 @@ Proof.
 Qed.
 
 
-Definition sublist (lo : nat) (hi : nat) (l : list nat) :=
+(* Definition sublist (lo : nat) (hi : nat) (l : list nat) :=
     fst (List.fold_right (fun (ele : nat) (acc : ((list nat)*nat)) =>
             match acc with
             | (l,index) => if (lo <=? index) && (index <? hi) then
                     (ele :: l, index-1)
                 else (l, index-1)
-                end) ([],List.length l - 1) l).
+                end) ([],List.length l - 1) l). *)
+
+Fixpoint sublist (lo : nat) (hi : nat) (l : list nat) :=
+    match (lo,hi,l) with
+    | (_,_,[]) => []
+    | (_,0,_) => []
+    | (0,_,x::xs) => x :: (sublist 0 (hi-1) xs)
+    | (_,_,x::xs) => sublist (lo-1) (hi-1) xs
+    end.
     
 Compute (sublist 2 5 [0;2;5;3;7;9;5;4;4]).
 Example sublist_example1:
@@ -93,6 +101,7 @@ Definition fst3 (tuple : ((list nat)*nat*nat)) : list nat :=
 
 Definition swap (l : list nat) (i1 : nat) (i2 : nat) : list nat :=
     insert (lookup l i2) i1 (insert (lookup l i1) i2 l).
+
 Example swap_example1:
     swap [1;2;3;4] 0 3 = [4;2;3;1].
 Proof.
@@ -155,15 +164,6 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma partition_left_sort :
-forall l pivot lo hi,
-lo < hi -> hi < List.length l -> lo <= pivot -> pivot <= hi -> ((partition_left l pivot lo hi) = lo) \/ (pivot < (partition_left l pivot lo hi)). 
-Proof.
-    intros l pivot lo hi H H1 H2 H3. right. induction pivot.
-    - unfold partition_left. admit.
-    - admit.
-Admitted.
-
 Program Fixpoint partition_right (l : list nat) (pivot : nat) (lo : nat) (hi : nat) {measure (hi-lo)} : nat :=
     match hi <=? lo with
         | true => hi
@@ -192,9 +192,9 @@ Program Fixpoint partition (l : list nat) (pivot : nat) (lo : nat) (initial_lo :
         | false => match (j <=? hi) with
             | true => match (lo <=? i) with 
                 | true => partition (swap l i j) pivot i initial_lo j
-                | false => (j,[0]) (* will never happen *)
+                | false => (j,[]) (* will never happen *)
                 end
-            | false => (j,[1]) (* will never happen *)
+            | false => (j,[]) (* will never happen *)
             end
         | true => (j, (swap l initial_lo j))
     end end.
@@ -211,7 +211,7 @@ Program Fixpoint sort (l : list nat) (lo : nat) (hi : nat) {measure (hi-lo)} : l
     | true => l
     | false => match (partition l (lookup l lo) lo lo hi) with
         | (j, partitioned) => match ((j <=? hi) && (lo <=? j)) with 
-            | false => [2] (* will never happen *)
+            | false => [] (* will never happen *)
             | true => sort (sort partitioned lo (j-1)) (j+1) hi
             end
     end end.
@@ -329,7 +329,6 @@ Lemma swap_perm:
 Proof.
     intros. induction l.
     - trivial.
-    -
 Admitted. 
 
 Lemma perm_shuffle_list:
@@ -355,6 +354,23 @@ Proof.
                 -- apply IHl1.
     Admitted.
 
+Lemma index_sorted_cons :
+    forall (l : list nat) (a len : nat),
+    indexSorted (a::l) 0 len -> indexSorted l 0 (len-1).
+Proof.
+    intros. apply indSorted_sort. unfold sublist_sorted. intros.
+Admitted.
+
+Lemma index_sorted_first :
+    forall (l : list nat) (a b len : nat),
+    len >= 1 -> indexSorted (a::b::l) 0 len -> a <= b.
+Proof.
+    intros. inversion H0.
+    - inversion H1. apply H7.
+    - subst. lia.
+    - subst. unfold sublist_sorted in H1.
+Admitted.
+
 Lemma start_end_sort :
     forall l,
     indexSorted l 0 (List.length l - 1) -> sorted l .
@@ -364,8 +380,12 @@ Proof.
     - destruct l.
         + apply sorted_1.
         + apply sorted_cons.
+            * apply index_sorted_first in H.
+                -- apply H.
+                -- trivial. simpl. lia.
+            * apply IHl. apply index_sorted_cons with (a:=a). apply H.
             (* * apply indSorted_sort in H2. *)
-            Admitted.
+Qed.
 
 Search (length _).
 Search (length (_ ++ _)).
@@ -382,6 +402,7 @@ Proof.
     intros.
     Search Permutation. induction l.
     - trivial.
+    - 
 Admitted.
 
 Lemma sort_same_length : forall l,
