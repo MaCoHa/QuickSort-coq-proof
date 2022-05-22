@@ -201,8 +201,9 @@ Program Fixpoint partition (l : list nat) (pivot : nat) (lo : nat) (initial_lo :
     end end.
 Next Obligation.
 symmetry in Heq_anonymous1. apply leb_complete_conv in Heq_anonymous1. symmetry in Heq_anonymous.
-apply Nat.leb_le in Heq_anonymous. symmetry in Heq_anonymous2. apply Nat.leb_le in Heq_anonymous2. apply helper. trivial. trivial. trivial.
-Qed.
+apply Nat.leb_le in Heq_anonymous. symmetry in Heq_anonymous2. apply Nat.leb_le in Heq_anonymous2.
+
+Admitted.
 
 Compute (partition (shuffle [15;14;13;12;11;10;5;2;6;3;1;4;9;8;7]) 12 0 0 14).
 
@@ -346,30 +347,48 @@ Proof.
     Admitted.
 
 Lemma start_end_sort :
-    forall l lo hi,
-    lo = 0 -> hi = (List.length l) - 1 ->  indexSorted l lo hi -> sorted l .
+    forall l,
+    indexSorted l 0 (List.length l - 1) -> sorted l .
 Proof.
-    intros l lo hi H H1 H2. induction l.
+    intros l H. induction l.
     - apply sorted_nil.
     - destruct l.
         + apply sorted_1.
         + apply sorted_cons.
-            * apply indSorted_sort in H2.
+            (* * apply indSorted_sort in H2. *)
+            Admitted.
 
+Search (length _).
+Search (length (_ ++ _)).
+Search (_ + _ - _).
+Lemma length_add : forall (l: list nat) (a:nat),
+    length (a::l) = length l + 1. 
+Proof.
+    intros. assert (length ([a] ++ l) = 1 + length l). apply app_length. rewrite Nat.add_comm in H. apply H.
+Qed.
 
-    
-Search(length _).
-Lemma quicksort_sortes:
+Lemma sort_perm : forall l,
+    ((length (sort l 0 (length l - 1))) = (length l)).
+Proof.
+    intros.
+    induction l.
+    - trivial.
+    - rewrite length_add. rewrite Nat.add_sub.   
+Admitted.
+
+(* Lemma sort_perm : forall l,
+    Permutation (sort l 0 (length l - 1)) l.
+Proof.
+    intros.
+    Search Permutation. induction l.
+    - trivial.
+Admitted.
+     *)
+
+Lemma quicksort_sorts:
     forall l , sorted (quicksort l).
 Proof.
-    intros l. induction l.
-- trivial.
-- unfold quicksort. induction (shuffle (a :: l)).
-    * trivial.
-    * simpl. induction (sort(a0 :: l0) 0 (length l0 - 0)).
-        + apply sorted_nil.
-        + induction (sort l0 0 (length l0 - 1)).
-            -- 
-Admitted.
+    intros l. unfold quicksort. apply start_end_sort. rewrite sort_perm. apply Sort_btw_index.
+Qed.
 
     
