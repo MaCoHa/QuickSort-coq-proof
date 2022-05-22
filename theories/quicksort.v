@@ -92,8 +92,11 @@ Definition fst3 (tuple : ((list nat)*nat*nat)) : list nat :=
     end.
 
 Definition swap (l : list nat) (i1 : nat) (i2 : nat) : list nat :=
-    insert (lookup l i2) i1 (insert (lookup l i1) i2 l).
-
+    match l with
+    | [] => l
+    | [a] => l
+    | l => insert (lookup l i2) i1 (insert (lookup l i1) i2 l)
+    end.
 Example swap_example1:
     swap [1;2;3;4] 0 3 = [4;2;3;1].
 Proof.
@@ -323,12 +326,22 @@ Hint Constructors indexSorted.
 (*First proof that if l is shuffle it still contains all
  the same elemetns just in a different order*)
 Search (Permutation _ _).
+
+Lemma swap_perm:
+    forall (l : list nat) (i0 i1 : nat),
+    Permutation l (swap l i0 i1).
+Proof.
+    intros. induction l.
+    - trivial.
+    -
+Admitted. 
+
 Lemma perm_shuffle_list:
     forall l, Permutation l (shuffle l).
 Proof.
-    intros *. induction l.
-    - apply perm_nil.
-    - induction (shuffle (a :: l)).
+    intros. unfold shuffle.
+    - assert (forall (l : list nat) (i0 i1 : nat),
+    Permutation l (swap l i0 i1)). apply swap_perm.
 Admitted.
 
 Lemma Sort_btw_index :
@@ -368,27 +381,23 @@ Proof.
 Qed.
 
 Lemma sort_perm : forall l,
-    ((length (sort l 0 (length l - 1))) = (length l)).
-Proof.
-    intros.
-    induction l.
-    - trivial.
-    - rewrite length_add. rewrite Nat.add_sub.   
-Admitted.
-
-(* Lemma sort_perm : forall l,
     Permutation (sort l 0 (length l - 1)) l.
 Proof.
     intros.
     Search Permutation. induction l.
     - trivial.
 Admitted.
-     *)
+
+Lemma sort_same_length : forall l,
+    length (sort l 0 (length l - 1)) = length l.
+Proof.
+    intros. apply Permutation_length. apply sort_perm.
+Qed.
 
 Lemma quicksort_sorts:
     forall l , sorted (quicksort l).
 Proof.
-    intros l. unfold quicksort. apply start_end_sort. rewrite sort_perm. apply Sort_btw_index.
+    intros l. unfold quicksort. apply start_end_sort. rewrite sort_same_length. apply Sort_btw_index.
 Qed.
 
     
