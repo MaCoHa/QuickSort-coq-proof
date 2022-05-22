@@ -92,11 +92,7 @@ Definition fst3 (tuple : ((list nat)*nat*nat)) : list nat :=
     end.
 
 Definition swap (l : list nat) (i1 : nat) (i2 : nat) : list nat :=
-    match l with
-    | [] => l
-    | [a] => l
-    | l => insert (lookup l i2) i1 (insert (lookup l i1) i2 l)
-    end.
+    insert (lookup l i2) i1 (insert (lookup l i1) i2 l).
 Example swap_example1:
     swap [1;2;3;4] 0 3 = [4;2;3;1].
 Proof.
