@@ -10,7 +10,8 @@ From Coq Require Export Permutation.
 From Coq Require Export Numbers.NatInt.NZDiv.
 Require Coq.Program.Wf.
 From Coq Require Export Permutation.
-
+Require Coq.extraction.Extraction.
+Extraction Language OCaml.
 
 
 
@@ -59,14 +60,6 @@ Proof.
 Qed.
 
 
-(* Definition sublist (lo : nat) (hi : nat) (l : list nat) :=
-    fst (List.fold_right (fun (ele : nat) (acc : ((list nat)*nat)) =>
-            match acc with
-            | (l,index) => if (lo <=? index) && (index <? hi) then
-                    (ele :: l, index-1)
-                else (l, index-1)
-                end) ([],List.length l - 1) l). *)
-
 Fixpoint sublist (lo : nat) (hi : nat) (l : list nat) :=
     match (lo,hi,l) with
     | (_,_,[]) => []
@@ -75,7 +68,6 @@ Fixpoint sublist (lo : nat) (hi : nat) (l : list nat) :=
     | (_,_,x::xs) => sublist (lo-1) (hi-1) xs
     end.
     
-Compute (sublist 2 5 [0;2;5;3;7;9;5;4;4]).
 Example sublist_example1:
     sublist 2 5 [0;2;5;3;7;9;5;4;4] = [5;3;7].
 Proof.
@@ -121,8 +113,6 @@ Definition shuffle (l : list nat) : list nat :=
             | (li,seed,point) => (swap li point (randnat seed (List.length li)) ,seed+1,point+1)
             end) l (l,42,0)).
 
-
-
 Example shuffle_example1:
     shuffle [1;2;3;4;5] = [2;3;4;1;5]. (*pseudorandom order*)
 Proof.
@@ -130,20 +120,9 @@ Proof.
 Qed.
 
 
-
-
-
-
-
-
-
-
 (***************************************
             Quicksort code
 ****************************************)
-
-
-
 
 
 Program Fixpoint partition_left (l : list nat) (pivot : nat) (lo : nat) (hi : nat) {measure (hi-lo)} : nat :=
@@ -182,9 +161,6 @@ Proof.
     reflexivity.
 Qed.
 
-Lemma helper : forall pr pl hi lo, pr <= hi -> pl >= lo -> pl < pr -> pr - 1 - (pl + 1) < hi - lo.
-Proof. intros. lia.
-Qed. 
 
 Program Fixpoint partition (l : list nat) (pivot : nat) (lo : nat) (initial_lo : nat) (hi : nat) {measure (hi-lo)} : (nat*list nat) :=
     match ((partition_left l pivot lo hi), (partition_right l pivot lo hi)) with
@@ -192,19 +168,17 @@ Program Fixpoint partition (l : list nat) (pivot : nat) (lo : nat) (initial_lo :
         | false => match (j <=? hi) with
             | true => match (lo <=? i) with 
                 | true => partition (swap l i j) pivot i initial_lo j
-                | false => (j,[]) (* will never happen *)
+                | false => (j,l) (* will never happen *)
                 end
-            | false => (j,[]) (* will never happen *)
+            | false => (j,l) (* will never happen *)
             end
         | true => (j, (swap l initial_lo j))
     end end.
 Next Obligation.
 symmetry in Heq_anonymous1. apply leb_complete_conv in Heq_anonymous1. symmetry in Heq_anonymous.
 apply Nat.leb_le in Heq_anonymous. symmetry in Heq_anonymous2. apply Nat.leb_le in Heq_anonymous2.
-
 Admitted.
 
-Compute (partition (shuffle [15;14;13;12;11;10;5;2;6;3;1;4;9;8;7]) 12 0 0 14).
 
 Program Fixpoint sort (l : list nat) (lo : nat) (hi : nat) {measure (hi-lo)} : list nat :=
     match (hi <=? lo) with
@@ -228,31 +202,32 @@ apply Nat.leb_le in H0.
 lia.
 Qed.
 
-Compute (partition_left [3;4;7;1;2;5;6;8;9] 3 0 8).
-Compute (partition_right [3;4;7;1;2;5;6;8;9] 3 0 8).
-Compute (partition [3;4;7;1;2;5;6;8;9] 3 0 0 8).
-
-Compute (sort [3;4;7;1;2;5;6;8;9] 0 8).
-
 Definition quicksort (l : list nat) : list nat :=
-    match (shuffle l) with
-    (* | shuffeled => shuffeled  *)
-    | shuffled => sort shuffled 0 (List.length shuffled - 1)
-    end.
+    let shuffled := (shuffle l) in sort shuffled 0 (List.length shuffled - 1).
 
-Compute (quicksort [15;14;13;12;11;10;5;2;6;3;1;4;9;8;7]).
-Compute (quicksort [66; 91; 69; 62; 52; 10; 49; 38; 53; 54; 98; 95; 92; 6; 20; 32; 41; 71; 59; 25; 80; 75; 73; 79; 63; 48; 12; 46; 28; 68; 65; 24; 81; 85; 47; 35; 33; 30; 17; 72; 7; 89; 40; 39; 94; 51; 13; 11; 67; 16; 76; 31; 77; 60; 82; 61; 42; 18; 36; 87; 93; 88; 26; 22; 8; 4; 84; 29; 21; 97; 56; 2; 37; 90; 9; 15; 50; 58; 70; 78; 19; 99; 86; 44; 96; 1; 100; 14; 43; 64; 55; 3; 27; 45; 74; 0; 23; 57; 34; 5; 83]).
 Example quicksort_example1:
     quicksort [2;3;1;4] = [1;2;3;4].
 Proof.
     reflexivity.
 Qed.
 
+Example quickort_example2:
+    quicksort [15;14;13;12;11;10;5;2;6;3;1;4;9;8;7] = [1;2;3;4;5;6;7;8;9;10;11;12;13;14;15].
+Proof.
+    trivial.
+Qed.
+
+Example quicksort_example3:
+    quicksort [66;91;69;62;52;10;49;38;53;54;98;95;92;6;20;32;41;71;59;25;80;75;73;79;63;48;12;46;28;68;65;24;81;85;47;35;33;30;17;72;7;89;40;39;94;51;13;11;67;16;76;31;77;60;82;61;42;18;36;87;93;88;26;22;8;4;84;29;21;97;56;2;37;90;9;15;50;58;70;78;19;99;86;44;96;1;100;14;43;64;55;3;27;45;74;0;23;57;34;5;83]
+    = [0;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59;60;61;62;63;64;65;66;67;68;69;70;71;72;73;74;75;76;77;78;79;80;81;82;83;84;85;86;87;88;89;90;91;92;93;94;95;96;97;98;99;100].
+Proof.
+    trivial.
+Qed.
 
 
 
 (***************************************
-            Definitions for a sortede list taken/reused from Vfa sort.v file
+            Definitions for a sorted list taken/reused from Vfa sort.v file
 ****************************************)
 
 
@@ -278,7 +253,6 @@ Definition sorted'' (al : list nat) := forall i j,
     nth i al 0 <= nth j al 0.
 
 
-
     Definition sorted' (al : list nat) := forall i j iv jv,
     i < j ->
     nth_error al i = Some iv ->
@@ -287,18 +261,6 @@ Definition sorted'' (al : list nat) := forall i j,
 
     Definition is_a_sorting_algorithm (f: list nat -> list nat) := forall al,
     Permutation al (f al) /\ sorted (f al).
-
-
-(***************************************
-            Definition for bdestruct from Vfa Perm.v file
-****************************************)
-Ltac bdestruct X :=
-    let H := fresh in let e := fresh "e" in
-     evar (e: Prop);
-     assert (H: reflect e X); subst e;
-      [eauto with bdestruct
-      | destruct H as [H|H];
-         [ | try first [apply not_lt in H | apply not_le in H]]].
   
 (* ################################################################# *)
 (** * Proof of Correctness *)
@@ -319,16 +281,42 @@ Inductive indexSorted : list nat -> nat -> nat -> Prop :=
 
 Hint Constructors indexSorted.
 
-(*First proof that if l is shuffle it still contains all
- the same elemetns just in a different order*)
-Search (Permutation _ _).
+Lemma swap_first:
+    forall (l : list nat) (i0 i1 a : nat),
+    0 < i0 < List.length (a::l) -> 0 < i1 < List.length (a::l) -> (swap (a::l) i0 i1) = a::(swap l i0 i1).
+Proof.
+    intros.
+Admitted.
+
+Lemma swap_same:
+    forall (l : list nat) (i0 i1 : nat),
+    i0 < List.length l -> i1 < List.length l -> i0 = i1 -> swap l i0 i1 = l.
+Proof.
+    intros. unfold swap. subst. unfold insert. unfold lookup. induction i1. 
+Admitted. 
 
 Lemma swap_perm:
     forall (l : list nat) (i0 i1 : nat),
-    Permutation l (swap l i0 i1).
+    i0 < List.length l -> i1 < List.length l -> Permutation l (swap l i0 i1).
 Proof.
     intros. induction l.
-    - trivial.
+    - unfold swap. simpl in H. lia.
+    - destruct i0.
+    + destruct i1.
+    * rewrite swap_same.
+    -- trivial.
+    -- trivial.
+    -- trivial.
+    -- trivial.
+    * admit.
+    + destruct i1.
+    * admit.
+    * rewrite swap_first.
+    -- apply perm_skip. apply IHl.
+    ++ admit.
+    ++ admit.
+    -- lia.
+    -- lia.
 Admitted. 
 
 Lemma perm_shuffle_list:
@@ -336,23 +324,22 @@ Lemma perm_shuffle_list:
 Proof.
     intros. unfold shuffle.
     - assert (forall (l : list nat) (i0 i1 : nat),
-    Permutation l (swap l i0 i1)). apply swap_perm.
+    Permutation l (swap l i0 i1)).
+        + intros. apply swap_perm.
+            * admit.
+            * admit.
+        + 
 Admitted.
 
 Lemma Sort_btw_index :
     forall l lo hi, 
-   indexSorted (sort l lo hi) lo hi.
+   lo < List.length l -> hi < List.length l -> indexSorted (sort l lo hi) lo hi.
 Proof.
-    intros l lo hi. induction sort.
-    - apply indSorted_sorted. apply sorted_nil.
-    - apply indSorted_sort. unfold sublist_sorted. intros H H1. induction sublist.
-        + apply sorted_nil.
-        + destruct l1.
-            * apply sorted_1.
-            * apply sorted_cons.
-                -- admit.
-                -- apply IHl1.
-    Admitted.
+    intros. induction l.
+    - simpl in H. lia.
+    - apply indSorted_sort. unfold sublist_sorted. intros. simpl in *. assert (lo < length l). lia. apply IHl in H3.
+    unfold sublist.
+Admitted.
 
 Lemma index_sorted_cons :
     forall (l : list nat) (a len : nat),
@@ -384,23 +371,13 @@ Proof.
                 -- apply H.
                 -- trivial. simpl. lia.
             * apply IHl. apply index_sorted_cons with (a:=a). apply H.
-            (* * apply indSorted_sort in H2. *)
-Qed.
-
-Search (length _).
-Search (length (_ ++ _)).
-Search (_ + _ - _).
-Lemma length_add : forall (l: list nat) (a:nat),
-    length (a::l) = length l + 1. 
-Proof.
-    intros. assert (length ([a] ++ l) = 1 + length l). apply app_length. rewrite Nat.add_comm in H. apply H.
 Qed.
 
 Lemma sort_perm : forall l,
     Permutation (sort l 0 (length l - 1)) l.
 Proof.
     intros.
-    Search Permutation. induction l.
+    induction l.
     - trivial.
     - 
 Admitted.
@@ -414,7 +391,27 @@ Qed.
 Lemma quicksort_sorts:
     forall l , sorted (quicksort l).
 Proof.
-    intros l. unfold quicksort. apply start_end_sort. rewrite sort_same_length. apply Sort_btw_index.
-Qed.
+    intros l. induction l.
+    - trivial.
+    - unfold quicksort. apply start_end_sort. rewrite sort_same_length. apply Sort_btw_index.
+    + admit.
+    + admit.
+Admitted.
+
+Extract Inductive nat => "int"
+ [ "0" "(fun x -> x + 1)" ]
+ "(fun zero succ n ->
+ if n=0 then zero ()
+ else succ (n-1))".
+
+ Extract Inductive list => "Array.array" [ "[||]" "(::)" ].
+ Extract Constant plus => "( + )".
+ Extract Constant minus => "( - )".
+ Extract Constant mult => "( - )".
+Extract Inlined Constant leb => "(<=)".
+Extract Inductive bool => "bool" [ "true" "false" ].
+Extract Constant eqb => "( = )".
+
+Extraction "verified_quicksort_array.ml" quicksort.
 
     
