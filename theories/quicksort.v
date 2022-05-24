@@ -38,11 +38,46 @@ Example lookup_example_higher_than_list :
     lookup [2;3;4;5;1;2] 10 = 0.
 Proof. simpl. reflexivity. Qed.
 
+
+Lemma eqb_reflect : forall x y, reflect (x = y) (x =? y).
+Proof.
+  intros x y. apply iff_reflect. symmetry.
+  apply Nat.eqb_eq.
+Qed.
+
+Lemma ltb_reflect : forall x y, reflect (x < y) (x <? y).
+Proof.
+  intros x y. apply iff_reflect. symmetry.
+  apply Nat.ltb_lt.
+Qed.
+
+Lemma leb_reflect : forall x y, reflect (x <= y) (x <=? y).
+Proof.
+  intros x y. apply iff_reflect. symmetry.
+  apply Nat.leb_le.
+Qed.
+
+
+Hint Resolve ltb_reflect leb_reflect eqb_reflect : bdestruct.
+
+Ltac bdestruct X :=
+  let H := fresh in let e := fresh "e" in
+   evar (e: Prop);
+   assert (H: reflect e X); subst e;
+    [eauto with bdestruct
+    | destruct H as [H|H];
+       [ | try first [apply not_lt in H | apply not_le in H]]].
+
 Lemma lookup_elem: forall (l : list nat) (index elem : nat),
 index < List.length l -> In (lookup l index) l.
 Proof.
-    intros.
+    intros l. induction l. 
+    - intros. simpl in *. lia.
+    - intros. simpl in *. bdestruct (index <=? 0).
+        + left. reflexivity.
+        + right. admit.
 Admitted.
+
 
 
 
@@ -67,11 +102,20 @@ Proof.
     trivial.
 Qed.
 
+
 Lemma insert_ele: forall (l : list nat)(index elem : nat),
     index < List.length l -> lookup (insert l index elem) index = elem.
 Proof.
-    intros.
-Admitted.
+    intros l. induction l.
+    - intros. simpl in *. lia.
+    - intros. simpl in *. destruct index.
+        + unfold lookup. bdestruct (0 <=? 0).
+            * reflexivity.
+            * lia.
+        + unfold lookup. bdestruct (S index <=? 0).
+            * lia.
+            * fold lookup. simpl. apply lt_S_n in H. rewrite Nat.sub_0_r. apply (IHl index elem). apply H.
+Qed.
 
 Fixpoint sublist (lo : nat) (hi : nat) (l : list nat) :=
     match (lo,hi,l) with
@@ -197,9 +241,12 @@ Qed.
 Lemma partition_left_partitions : forall (l : list nat) (pivot lo hi j : nat),
     lo <= hi -> hi < List.length l -> j < (partition_left l pivot lo hi) -> lookup l j < pivot.
 Proof.
-    Admitted.
-
-
+    intros l. induction l.
+    - intros. simpl in *. lia.
+    - intros. induction j.
+        + simpl. admit.
+        + simpl in *. 
+      
 
 
 Program Fixpoint partition_right (l : list nat) (pivot : nat) (lo : nat) (hi : nat) {measure (hi-lo)} : nat :=
@@ -246,11 +293,20 @@ symmetry in Heq_anonymous1. apply leb_complete_conv in Heq_anonymous1. symmetry 
 apply Nat.leb_le in Heq_anonymous. symmetry in Heq_anonymous2. apply Nat.leb_le in Heq_anonymous2.
 Admitted.
 
+
+
+
 Lemma partition_low : forall (l : list nat) (pivot lo initial_lo hi j : nat),
-initial_lo <= lo -> lo <= hi -> hi < List.length l -> lo <= j -> j < (fst(partition l pivot lo initial_lo hi)) -> (lookup (snd(partition l pivot lo initial_lo hi)) j < pivot).
+initial_lo <= lo -> lo <= hi -> hi < List.length l -> lo <= j -> j < (fst(partition l pivot lo initial_lo hi)) ->(lookup (snd(partition l pivot lo initial_lo hi)) j <= pivot).
 Proof.
-    intros.
-    Admitted.
+    intros l pivot lo initial_lo hi j. generalize dependent l; generalize dependent pivot; generalize dependent lo;
+    generalize dependent initial_lo; generalize dependent hi. induction j.
+    - intros.
+    
+    intros l. induction l. 
+    - intros. simpl in *. lia.
+    - intros. induction partition. simpl in *. subst. unfold lookup. fold lookup.
+        
 
 Lemma partition_high : forall (l : list nat) (pivot lo initial_lo hi i : nat),
 initial_lo <= lo -> lo <= hi -> hi < List.length l -> i <= hi -> fst(partition l pivot lo initial_lo hi) < i -> (pivot < lookup (snd(partition l pivot lo initial_lo hi)) i).
@@ -386,34 +442,6 @@ intros.
 Admitted.  
 
 
-Lemma eqb_reflect : forall x y, reflect (x = y) (x =? y).
-Proof.
-  intros x y. apply iff_reflect. symmetry.
-  apply Nat.eqb_eq.
-Qed.
-
-Lemma ltb_reflect : forall x y, reflect (x < y) (x <? y).
-Proof.
-  intros x y. apply iff_reflect. symmetry.
-  apply Nat.ltb_lt.
-Qed.
-
-Lemma leb_reflect : forall x y, reflect (x <= y) (x <=? y).
-Proof.
-  intros x y. apply iff_reflect. symmetry.
-  apply Nat.leb_le.
-Qed.
-
-
-Hint Resolve ltb_reflect leb_reflect eqb_reflect : bdestruct.
-
-Ltac bdestruct X :=
-  let H := fresh in let e := fresh "e" in
-   evar (e: Prop);
-   assert (H: reflect e X); subst e;
-    [eauto with bdestruct
-    | destruct H as [H|H];
-       [ | try first [apply not_lt in H | apply not_le in H]]].
 
 Lemma sort_perm : forall (l : list nat) (lo hi : nat),
     lo <= hi -> hi < List.length l -> Permutation (sort l lo hi) l.
