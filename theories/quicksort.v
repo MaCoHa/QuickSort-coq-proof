@@ -26,50 +26,6 @@ Fixpoint lookup (l : list nat) (i : nat) :=
     end.
 
 
-
-Lemma eqb_reflect : forall x y, reflect (x = y) (x =? y).
-Proof.
-  intros x y. apply iff_reflect. symmetry.
-  apply Nat.eqb_eq.
-Qed.
-
-Lemma ltb_reflect : forall x y, reflect (x < y) (x <? y).
-Proof.
-  intros x y. apply iff_reflect. symmetry.
-  apply Nat.ltb_lt.
-Qed.
-
-Lemma leb_reflect : forall x y, reflect (x <= y) (x <=? y).
-Proof.
-  intros x y. apply iff_reflect. symmetry.
-  apply Nat.leb_le.
-Qed.
-
-
-Hint Resolve ltb_reflect leb_reflect eqb_reflect : bdestruct.
-
-Ltac bdestruct X :=
-  let H := fresh in let e := fresh "e" in
-   evar (e: Prop);
-   assert (H: reflect e X); subst e;
-    [eauto with bdestruct
-    | destruct H as [H|H];
-       [ | try first [apply not_lt in H | apply not_le in H]]].
-
-Lemma lookup_elem: forall (l : list nat) (index elem : nat),
-index < List.length l -> In (lookup l index) l.
-Proof.
-    intros l. induction l. 
-    - intros. simpl in *. lia.
-    - intros. simpl in *. bdestruct (index <=? 0).
-        + left. reflexivity.
-        + right. admit.
-Admitted.
-
-
-
-
-
 Fixpoint insert (l : list nat) (index : nat) (elem : nat) :=
 match (index, l) with
 | (0, x::xs) => elem :: xs
@@ -77,30 +33,6 @@ match (index, l) with
 | (n, x::xs) => x :: (insert xs (index-1) elem)
 | (n, []) => [elem] (* should never happen *)
 end.
-
-
-
-Lemma insert_ele: forall (l : list nat)(index elem : nat),
-    index < List.length l -> lookup (insert l index elem) index = elem.
-Proof.
-    intros l. induction l.
-    - intros. simpl in *. lia.
-    - intros. simpl in *. destruct index.
-        + unfold lookup. bdestruct (0 <=? 0).
-            * reflexivity.
-            * lia.
-        + unfold lookup. bdestruct (S index <=? 0).
-            * lia.
-            * fold lookup. simpl. apply lt_S_n in H. rewrite Nat.sub_0_r. apply (IHl index elem). apply H.
-Qed.
-
-Fixpoint sublist (lo : nat) (hi : nat) (l : list nat) :=
-    match (lo,hi,l) with
-    | (_,_,[]) => []
-    | (_,0,_) => []
-    | (0,_,x::xs) => x :: (sublist 0 (hi-1) xs)
-    | (_,_,x::xs) => sublist (lo-1) (hi-1) xs
-    end.
 
 
 (***************************************
@@ -152,20 +84,6 @@ Next Obligation.
     symmetry in Heq_anonymous0. apply leb_complete_conv in Heq_anonymous0.
     lia.
 Qed.
-
-
-
-
-
-Lemma partition_left_partitions : forall (l : list nat) (pivot lo hi j : nat),
-    lo <= hi -> hi < List.length l -> j < (partition_left l pivot lo hi) -> lookup l j < pivot.
-Proof.
-    intros l. induction l.
-    - intros. simpl in *. lia.
-    - intros. induction j.
-        + simpl. admit.
-        + simpl in *. 
-      
 
 
 Program Fixpoint partition_right (l : list nat) (pivot : nat) (lo : nat) (hi : nat) {measure (hi-lo)} : nat :=
@@ -264,14 +182,6 @@ Proof.
     trivial.
 Qed.
 
-
-Example sublist_example1:
-    sublist 2 5 [0;2;5;3;7;9;5;4;4] = [5;3;7].
-Proof.
-    trivial.
-Qed.
-
-
 Example swap_example1:
     swap [1;2;3;4] 0 3 = [4;2;3;1].
 Proof.
@@ -352,14 +262,44 @@ Definition sorted'' (al : list nat) := forall i j,
     nth i al 0 <= nth j al 0.
 
 
-    Definition sorted' (al : list nat) := forall i j iv jv,
-    i < j ->
-    nth_error al i = Some iv ->
-    nth_error al j = Some jv ->
-    iv <= jv.
+Definition sorted' (al : list nat) := forall i j iv jv,
+i < j ->
+nth_error al i = Some iv ->
+nth_error al j = Some jv ->
+iv <= jv.
 
-    Definition is_a_sorting_algorithm (f: list nat -> list nat) := forall al,
-    Permutation al (f al) /\ sorted (f al).
+Definition is_a_sorting_algorithm (f: list nat -> list nat) := forall al,
+Permutation al (f al) /\ sorted (f al).
+
+Lemma eqb_reflect : forall x y, reflect (x = y) (x =? y).
+Proof.
+  intros x y. apply iff_reflect. symmetry.
+  apply Nat.eqb_eq.
+Qed.
+
+Lemma ltb_reflect : forall x y, reflect (x < y) (x <? y).
+Proof.
+  intros x y. apply iff_reflect. symmetry.
+  apply Nat.ltb_lt.
+Qed.
+
+Lemma leb_reflect : forall x y, reflect (x <= y) (x <=? y).
+Proof.
+  intros x y. apply iff_reflect. symmetry.
+  apply Nat.leb_le.
+Qed.
+
+Hint Resolve ltb_reflect leb_reflect eqb_reflect : bdestruct.
+
+Ltac bdestruct X :=
+    let H := fresh in let e := fresh "e" in
+    evar (e: Prop);
+    assert (H: reflect e X); subst e;
+    [eauto with bdestruct
+    | destruct H as [H|H];
+        [ | try first [apply not_lt in H | apply not_le in H]]].
+    
+    
   
 (* ################################################################# *)
 (** * Proof of Correctness *)
@@ -367,13 +307,28 @@ Definition sorted'' (al : list nat) := forall i j,
 Lemma lookup_elem: forall (l : list nat) (index elem : nat),
 index < List.length l -> In (lookup l index) l.
 Proof.
-    intros.
+    intros l. induction l. 
+    - intros. simpl in *. lia.
+    - intros. simpl in *. bdestruct (index <=? 0).
+        + left. reflexivity.
+        + right. admit.
 Admitted.
+
+
 Lemma insert_ele: forall (l : list nat)(index elem : nat),
     index < List.length l -> lookup (insert l index elem) index = elem.
 Proof.
-    intros.
-Admitted.
+    intros l. induction l.
+    - intros. simpl in *. lia.
+    - intros. simpl in *. destruct index.
+        + unfold lookup. bdestruct (0 <=? 0).
+            * reflexivity.
+            * lia.
+        + unfold lookup. bdestruct (S index <=? 0).
+            * lia.
+            * fold lookup. simpl. apply lt_S_n in H. rewrite Nat.sub_0_r. apply (IHl index elem). apply H.
+Qed.
+
 Lemma randnat_less: forall (seed bound : nat),
     bound > 0 -> randnat seed bound < bound.
 Proof.
@@ -409,7 +364,12 @@ Admitted.
 Lemma partition_left_partitions : forall (l : list nat) (pivot lo hi j : nat),
     lo <= hi -> hi < List.length l -> j < (partition_left l pivot lo hi) -> lookup l j < pivot.
 Proof.
-    Admitted.
+    intros l. induction l.
+    - intros. simpl in *. lia.
+    - intros. induction j.
+        + simpl. admit.
+        + simpl in *. 
+Admitted.
 
 Lemma partition_right_partitions : forall (l : list nat) (pivot lo hi j : nat),
     lo <= hi -> hi < List.length l -> j < List.length l -> (partition_right l pivot lo hi) < j -> pivot < lookup l j.
@@ -420,13 +380,10 @@ Admitted.
 Lemma partition_low : forall (l : list nat) (pivot lo initial_lo hi j : nat),
 initial_lo <= lo -> lo <= hi -> hi < List.length l -> lo <= j -> j < (fst(partition l pivot lo initial_lo hi)) ->(lookup (snd(partition l pivot lo initial_lo hi)) j <= pivot).
 Proof.
-    intros l pivot lo initial_lo hi j. generalize dependent l; generalize dependent pivot; generalize dependent lo;
-    generalize dependent initial_lo; generalize dependent hi. induction j.
-    - intros.
-    
     intros l. induction l. 
     - intros. simpl in *. lia.
     - intros. induction partition. simpl in *. subst. unfold lookup. fold lookup.
+Admitted.
 
 Lemma partition_high : forall (l : list nat) (pivot lo initial_lo hi i : nat),
 initial_lo <= lo -> lo <= hi -> hi < List.length l -> i <= hi -> fst(partition l pivot lo initial_lo hi) < i -> (pivot < lookup (snd(partition l pivot lo initial_lo hi)) i).
@@ -486,41 +443,6 @@ Proof.
     -- simpl in *. rewrite Nat.add_1_r. apply H3.
 Qed.
 
-Lemma eqb_reflect : forall x y, reflect (x = y) (x =? y).
-Proof.
-  intros x y. apply iff_reflect. symmetry.
-  apply Nat.eqb_eq.
-Qed.
-
-Lemma ltb_reflect : forall x y, reflect (x < y) (x <? y).
-Proof.
-  intros x y. apply iff_reflect. symmetry.
-  apply Nat.ltb_lt.
-Qed.
-
-Lemma leb_reflect : forall x y, reflect (x <= y) (x <=? y).
-Proof.
-  intros x y. apply iff_reflect. symmetry.
-  apply Nat.leb_le.
-Qed.
-
-
-Hint Resolve ltb_reflect leb_reflect eqb_reflect : bdestruct.
-
-Ltac bdestruct X :=
-  let H := fresh in let e := fresh "e" in
-   evar (e: Prop);
-   assert (H: reflect e X); subst e;
-    [eauto with bdestruct
-    | destruct H as [H|H];
-       [ | try first [apply not_lt in H | apply not_le in H]]].
-Lemma sort_nil:forall (l : list nat) (lo hi : nat),
-    l = [] -> sort l lo hi = [].
-Proof.
-intros.
-Admitted.  
-
-
 
 Lemma sort_nil:forall (l : list nat) (lo hi : nat),
     l = [] -> sort l lo hi = [].
@@ -553,7 +475,8 @@ Proof.
     + simpl. simpl in H0. trivial.
 Qed.
    
-Lemma sort_sorted_seqment : forall (l : list nat) (lo hi : nat),
+
+Lemma sort_sorted_segment : forall (l : list nat) (lo hi : nat),
    lo < hi -> hi < List.length l -> sorted_segment lo (hi+1) (sort l lo (hi)).
    Proof.
     intros l. induction l.
@@ -578,8 +501,10 @@ Theorem quicksort_sorts:
 Proof.
     intros l. induction l.
     - trivial.
-    - unfold quicksort. apply start_end_sort. rewrite sort_same_length. apply sort_sorted_seqment.
-    + lia.
+    - unfold quicksort. apply start_end_sort. rewrite sort_same_length.
+    (* + apply sort_sorted_segment. *)
+    + admit.
+    + rewrite <- perm_shuffle_list. lia.
     + rewrite <- perm_shuffle_list. lia. 
 Qed.
 
