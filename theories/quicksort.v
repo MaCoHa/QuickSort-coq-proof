@@ -24,25 +24,8 @@ Fixpoint lookup (l : list nat) (i : nat) :=
     | [] => 0
     | h :: t => if i <=? 0 then h else lookup t (i-1)
     end.
-   
 
-Example lookup_example1 :
-    lookup [2;3;4;5;1;2] 3= 5.
-Proof. simpl. reflexivity. Qed.
 
-Example lookup_example_empty_list :
-    lookup [] 3= 0.
-Proof. simpl. reflexivity. Qed.
-
-Example lookup_example_higher_than_list :
-    lookup [2;3;4;5;1;2] 10 = 0.
-Proof. simpl. reflexivity. Qed.
-
-Lemma lookup_elem: forall (l : list nat) (index elem : nat),
-index < List.length l -> In (lookup l index) l.
-Proof.
-    intros.
-Admitted.
 
 
 
@@ -55,23 +38,7 @@ match (index, l) with
 | (n, []) => [elem] (* should never happen *)
 end.
 
-Example insert_example1:
-    insert [2;2;2] 1 3 = [2;3;2].
-Proof.
-    trivial.
-Qed.
 
-Example insert_example2:
-    insert [2] 0 3 = [3].
-Proof.
-    trivial.
-Qed.
-
-Lemma insert_ele: forall (l : list nat)(index elem : nat),
-    index < List.length l -> lookup (insert l index elem) index = elem.
-Proof.
-    intros.
-Admitted.
 
 Fixpoint sublist (lo : nat) (hi : nat) (l : list nat) :=
     match (lo,hi,l) with
@@ -80,14 +47,6 @@ Fixpoint sublist (lo : nat) (hi : nat) (l : list nat) :=
     | (0,_,x::xs) => x :: (sublist 0 (hi-1) xs)
     | (_,_,x::xs) => sublist (lo-1) (hi-1) xs
     end.
-    
-Example sublist_example1:
-    sublist 2 5 [0;2;5;3;7;9;5;4;4] = [5;3;7].
-Proof.
-    trivial.
-Qed.
-
-
 
 
 (***************************************
@@ -99,48 +58,19 @@ Qed.
 Definition randnat (seed : nat) (bound : nat) : nat :=
     (seed*31+7) mod bound.
 
-Lemma randnat_less: forall (seed bound : nat),
-    bound > 0 -> randnat seed bound < bound.
-Proof.
-    intros. unfold randnat. apply Nat.mod_bound_pos.
-    - lia.
-    - lia.
-Qed.
+
 
 Definition fst3 (A : Type) (B : Type) (C : Type) (tuple : (A*B*C)) : A :=
     match tuple with
     | (a,b,c) => a
     end.
 
-Lemma fst3_first: forall (A B C : Type) (a:A) (b:B) (c:C),
-    fst3 A B C (a,b,c) = a.
-Proof.
-    trivial.
-Qed.
+
 
 Definition swap (l : list nat) (i1 : nat) (i2 : nat) : list nat :=
     insert (insert l i2 (lookup l i1)) i1 (lookup l i2).
 
-Example swap_example1:
-    swap [1;2;3;4] 0 3 = [4;2;3;1].
-Proof.
-    trivial.
-Qed.
 
-Example swap_example2:
-    swap [1;2;3;4;5] 0 3 = [4;2;3;1;5].
-Proof.
-    trivial.
-Qed.
-
-Lemma swap_perm:
-    forall (l : list nat) (i0 i1 : nat),
-    i0 < List.length l -> i1 < List.length l -> Permutation l (swap l i0 i1).
-Proof.
-    intros. generalize dependent i0. generalize dependent i1. induction l.
-    - intros. simpl in H. lia.
-    - intros. simpl in *. unfold swap.
-Admitted. 
 
 
 Definition shuffle (l : list nat) : list nat :=
@@ -149,26 +79,8 @@ Definition shuffle (l : list nat) : list nat :=
             | (li,seed,point) => (swap li point (randnat seed (List.length li)) ,seed+1,point+1)
             end) l (l,42,0)).
 
-Example shuffle_example1:
-    shuffle [1;2;3;4;5] = [2;3;4;1;5]. (*pseudorandom order*)
-Proof.
-    reflexivity.
-Qed.
 
 
-
-
-Lemma perm_shuffle_list:
-    forall l, Permutation l (shuffle l).
-Proof.
-    intros. unfold shuffle.
-    - assert (forall (l : list nat) (i0 i1 : nat),
-    Permutation l (swap l i0 i1)).
-        + intros. apply swap_perm.
-            * admit.
-            * admit.
-        + 
-Admitted.
 
 (***************************************
             Quicksort code
@@ -187,17 +99,8 @@ Next Obligation.
     lia.
 Qed.
 
-Example partition_left_example1:
-    partition_left [1;2;3;4;5] 1 0 4 = 1.
-Proof.
-    reflexivity.
-Qed.
 
 
-Lemma partition_left_partitions : forall (l : list nat) (pivot lo hi j : nat),
-    lo <= hi -> hi < List.length l -> j < (partition_left l pivot lo hi) -> lookup l j < pivot.
-Proof.
-    Admitted.
 
 
 
@@ -214,16 +117,8 @@ Next Obligation.
     lia.
 Qed.
 
-Example partition_right_example1:
-    partition_right [1;2;3;4;5] 1 0 4 = 0.
-Proof.
-    reflexivity.
-Qed.
 
-Lemma partition_right_partitions : forall (l : list nat) (pivot lo hi j : nat),
-    lo <= hi -> hi < List.length l -> j < List.length l -> (partition_right l pivot lo hi) < j -> pivot < lookup l j.
-Proof.
-    Admitted.
+
 
 Program Fixpoint partition (l : list nat) (pivot : nat) (lo : nat) (initial_lo : nat) (hi : nat) {measure (hi-lo)} : (nat*list nat) :=
     match ((partition_left l pivot lo hi), (partition_right l pivot lo hi)) with
@@ -242,17 +137,7 @@ symmetry in Heq_anonymous1. apply leb_complete_conv in Heq_anonymous1. symmetry 
 apply Nat.leb_le in Heq_anonymous. symmetry in Heq_anonymous2. apply Nat.leb_le in Heq_anonymous2.
 Admitted.
 
-Lemma partition_low : forall (l : list nat) (pivot lo initial_lo hi j : nat),
-initial_lo <= lo -> lo <= hi -> hi < List.length l -> lo <= j -> j < (fst(partition l pivot lo initial_lo hi)) -> (lookup (snd(partition l pivot lo initial_lo hi)) j < pivot).
-Proof.
-    intros.
-    Admitted.
 
-Lemma partition_high : forall (l : list nat) (pivot lo initial_lo hi i : nat),
-initial_lo <= lo -> lo <= hi -> hi < List.length l -> i <= hi -> fst(partition l pivot lo initial_lo hi) < i -> (pivot < lookup (snd(partition l pivot lo initial_lo hi)) i).
-Proof.
-    intros.
-    Admitted.
 
 Inductive sorted_segment : nat -> nat -> list nat -> Prop :=
 | sorted_segment_nil : forall x lst, x <= List.length lst -> sorted_segment x x lst
@@ -284,18 +169,79 @@ apply Nat.leb_le in H0.
 lia.
 Qed.
 
-Lemma sort_sorted_seqment : forall (l : list nat) (lo hi : nat),
-lo <= hi -> hi <= List.length l -> sorted_segment lo hi (sort l lo (hi-1)).
-Proof.
-    intros l. induction l.
-    - intros. simpl in *.
-    inversion H0. subst. inversion H. subst. apply sorted_segment_nil. simpl. lia.
-    - intros. destruct H.
-    + apply sorted_segment_nil.
-Admitted.
-
 Definition quicksort (l : list nat) : list nat :=
     let shuffled := (shuffle l) in sort shuffled 0 (List.length shuffled - 1).
+
+
+(*********************************************
+        Examples
+**********************************************)
+Example lookup_example1 :
+    lookup [2;3;4;5;1;2] 3= 5.
+Proof. simpl. reflexivity. Qed.
+
+Example lookup_example_empty_list :
+    lookup [] 3= 0.
+Proof. simpl. reflexivity. Qed.
+
+Example lookup_example_higher_than_list :
+    lookup [2;3;4;5;1;2] 10 = 0.
+Proof. simpl. reflexivity. Qed.
+
+
+Example insert_example1:
+    insert [2;2;2] 1 3 = [2;3;2].
+Proof.
+    trivial.
+Qed.
+
+Example insert_example2:
+    insert [2] 0 3 = [3].
+Proof.
+    trivial.
+Qed.
+
+
+Example sublist_example1:
+    sublist 2 5 [0;2;5;3;7;9;5;4;4] = [5;3;7].
+Proof.
+    trivial.
+Qed.
+
+
+Example swap_example1:
+    swap [1;2;3;4] 0 3 = [4;2;3;1].
+Proof.
+    trivial.
+Qed.
+
+Example swap_example2:
+    swap [1;2;3;4;5] 0 3 = [4;2;3;1;5].
+Proof.
+    trivial.
+Qed.
+
+
+Example shuffle_example1:
+    shuffle [1;2;3;4;5] = [2;3;4;1;5]. (*pseudorandom order*)
+Proof.
+    reflexivity.
+Qed.
+
+
+Example partition_left_example1:
+    partition_left [1;2;3;4;5] 1 0 4 = 1.
+Proof.
+    reflexivity.
+Qed.
+
+
+Example partition_right_example1:
+    partition_right [1;2;3;4;5] 1 0 4 = 0.
+Proof.
+    reflexivity.
+Qed.
+
 
 Example quicksort_example1:
     quicksort [2;3;1;4] = [1;2;3;4].
@@ -315,9 +261,6 @@ Example quicksort_example3:
 Proof.
     trivial.
 Qed.
-
-
-
 
 (***************************************
             Definitions for a sorted list taken/reused from Vfa sort.v file
@@ -357,6 +300,70 @@ Definition sorted'' (al : list nat) := forall i j,
   
 (* ################################################################# *)
 (** * Proof of Correctness *)
+
+Lemma lookup_elem: forall (l : list nat) (index elem : nat),
+index < List.length l -> In (lookup l index) l.
+Proof.
+    intros.
+Admitted.
+Lemma insert_ele: forall (l : list nat)(index elem : nat),
+    index < List.length l -> lookup (insert l index elem) index = elem.
+Proof.
+    intros.
+Admitted.
+Lemma randnat_less: forall (seed bound : nat),
+    bound > 0 -> randnat seed bound < bound.
+Proof.
+    intros. unfold randnat. apply Nat.mod_bound_pos.
+    - lia.
+    - lia.
+Qed.
+Lemma fst3_first: forall (A B C : Type) (a:A) (b:B) (c:C),
+    fst3 A B C (a,b,c) = a.
+Proof.
+    trivial.
+Qed.
+Lemma swap_perm:
+    forall (l : list nat) (i0 i1 : nat),
+    i0 < List.length l -> i1 < List.length l -> Permutation l (swap l i0 i1).
+Proof.
+    intros. generalize dependent i0. generalize dependent i1. induction l.
+    - intros. simpl in H. lia.
+    - intros. simpl in *. unfold swap.
+Admitted. 
+Lemma perm_shuffle_list:
+    forall l, Permutation l (shuffle l).
+Proof.
+    intros. unfold shuffle.
+    - assert (forall (l : list nat) (i0 i1 : nat),
+    Permutation l (swap l i0 i1)).
+        + intros. apply swap_perm.
+            * admit.
+            * admit.
+        + 
+Admitted.
+Lemma partition_left_partitions : forall (l : list nat) (pivot lo hi j : nat),
+    lo <= hi -> hi < List.length l -> j < (partition_left l pivot lo hi) -> lookup l j < pivot.
+Proof.
+    Admitted.
+Lemma partition_right_partitions : forall (l : list nat) (pivot lo hi j : nat),
+    lo <= hi -> hi < List.length l -> j < List.length l -> (partition_right l pivot lo hi) < j -> pivot < lookup l j.
+Proof.
+    intros. Search (_ - 0).
+Admitted.
+Lemma partition_low : forall (l : list nat) (pivot lo initial_lo hi j : nat),
+initial_lo <= lo -> lo <= hi -> hi < List.length l -> lo <= j -> j < (fst(partition l pivot lo initial_lo hi)) -> (lookup (snd(partition l pivot lo initial_lo hi)) j < pivot).
+Proof.
+    intros.
+    Admitted.
+
+Lemma partition_high : forall (l : list nat) (pivot lo initial_lo hi i : nat),
+initial_lo <= lo -> lo <= hi -> hi < List.length l -> i <= hi -> fst(partition l pivot lo initial_lo hi) < i -> (pivot < lookup (snd(partition l pivot lo initial_lo hi)) i).
+Proof.
+    intros l. induction l.
+- intros. simpl in H1. lia.
+- intros. 
+Admitted.
 
 Lemma sorted_segment_smaller :
     forall l lo hi a,
@@ -408,13 +415,6 @@ Proof.
     -- simpl in *. rewrite Nat.add_1_r. apply H3.
 Qed.
 
-Lemma sort_nil:forall (l : list nat) (lo hi : nat),
-    l = [] -> sort l lo hi = [].
-Proof.
-intros.
-Admitted.  
-
-
 Lemma eqb_reflect : forall x y, reflect (x = y) (x =? y).
 Proof.
   intros x y. apply iff_reflect. symmetry.
@@ -444,22 +444,56 @@ Ltac bdestruct X :=
     | destruct H as [H|H];
        [ | try first [apply not_lt in H | apply not_le in H]]].
 
+Lemma sort_nil:forall (l : list nat) (lo hi : nat),
+    l = [] -> sort l lo hi = [].
+Proof.
+    intros.
+Admitted.  
+
+
 Lemma sort_perm : forall (l : list nat) (lo hi : nat),
-    lo <= hi -> hi < List.length l -> Permutation (sort l lo hi) l.
+    lo < hi -> hi < List.length l -> Permutation (sort l lo hi) l.
 Proof.
     intros l. 
     induction l.
     - intros. rewrite sort_nil.
         + apply perm_nil.  
         + trivial.
-    - unfold sort. unfold sort_func.
+    - admit.
 Admitted.
-
-Lemma sort_same_length : forall l,
-    length (sort l 0 (length l - 1)) = length l.
+   
+Lemma sort_same_length : forall l lo hi,
+    lo < hi -> hi < List.length l -> length (sort l lo hi) = length l.
 Proof.
-    intros. apply Permutation_length. apply sort_perm.
+    intros. induction l.
+    - simpl. rewrite sort_perm.
+    + simpl. lia.
+    + trivial.
+    + trivial.
+    - apply Permutation_length. apply sort_perm.
+    + lia.
+    + simpl. simpl in H0. trivial.
 Qed.
+   
+Lemma sort_sorted_seqment : forall (l : list nat) (lo hi : nat),
+   lo < hi -> hi < List.length l -> sorted_segment lo (hi+1) (sort l lo (hi)).
+   Proof.
+    intros l. induction l.
+    - intros. simpl in *.
+    inversion H0.
+    - intros. apply sorted_segment_cons.
+    + lia.
+    + rewrite sort_same_length.
+    * lia.
+    * lia.
+    * trivial.
+    + admit.
+    + apply sorted_segment_smaller with (a:=a).
+    * lia.
+    * 
+
+   Admitted.
+
 
 Theorem quicksort_sorts:
     forall l , sorted (quicksort l).
