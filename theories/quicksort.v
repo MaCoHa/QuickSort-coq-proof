@@ -1,4 +1,3 @@
-
 Set Warnings "-notation-overridden,-parsing,-deprecated-hint-without-locality".
 From Coq Require Export Bool.Bool.
 From Coq Require Export Arith.Arith.
@@ -85,7 +84,6 @@ Next Obligation.
     lia.
 Qed.
 
-
 Program Fixpoint partition_right (l : list nat) (pivot : nat) (lo : nat) (hi : nat) {measure (hi-lo)} : nat :=
     match hi <=? lo with
         | true => hi
@@ -97,9 +95,6 @@ Next Obligation.
     symmetry in Heq_anonymous0. apply leb_complete_conv in Heq_anonymous0.
     lia.
 Qed.
-
-
-
 
 Program Fixpoint partition (l : list nat) (pivot : nat) (lo : nat) (initial_lo : nat) (hi : nat) {measure (hi-lo)} : (nat*list nat) :=
     match ((partition_left l pivot lo hi), (partition_right l pivot lo hi)) with
@@ -117,16 +112,6 @@ Next Obligation.
 symmetry in Heq_anonymous1. apply leb_complete_conv in Heq_anonymous1. symmetry in Heq_anonymous.
 apply Nat.leb_le in Heq_anonymous. symmetry in Heq_anonymous2. apply Nat.leb_le in Heq_anonymous2.
 Admitted.
-        
-
-
-Inductive sorted_segment : nat -> nat -> list nat -> Prop :=
-| sorted_segment_nil : forall x lst, x <= List.length lst -> sorted_segment x x lst
-| sorted_segment_1 : forall x lst, x < List.length lst -> lst <> [] -> sorted_segment x (x + 1) lst
-| sorted_segment_cons : forall x y lst, x < y -> y <= List.length lst ->
-    lookup lst x <= lookup lst (x + 1) -> sorted_segment (x + 1) y lst -> sorted_segment x y lst.
-
-Hint Constructors sorted_segment.
 
 Program Fixpoint sort (l : list nat) (lo : nat) (hi : nat) {measure (hi-lo)} : list nat :=
     match (hi <=? lo) with
@@ -238,10 +223,6 @@ Qed.
 (***************************************
             Definitions for a sorted list taken/reused from Vfa sort.v file
 ****************************************)
-
-
-
-
  Inductive sorted : list nat -> Prop :=
  | sorted_nil :
      sorted []
@@ -299,10 +280,17 @@ Ltac bdestruct X :=
     | destruct H as [H|H];
         [ | try first [apply not_lt in H | apply not_le in H]]].
     
-    
   
 (* ################################################################# *)
 (** * Proof of Correctness *)
+
+Inductive sorted_segment : nat -> nat -> list nat -> Prop :=
+| sorted_segment_nil : forall x lst, x <= List.length lst -> sorted_segment x x lst
+| sorted_segment_1 : forall x lst, x < List.length lst -> lst <> [] -> sorted_segment x (x + 1) lst
+| sorted_segment_cons : forall x y lst, x < y -> y <= List.length lst ->
+    lookup lst x <= lookup lst (x + 1) -> sorted_segment (x + 1) y lst -> sorted_segment x y lst.
+
+Hint Constructors sorted_segment.
 
 Lemma lookup_elem: forall (l : list nat) (index elem : nat),
 index < List.length l -> In (lookup l index) l.
@@ -452,7 +440,7 @@ Admitted.
 
 
 Lemma sort_perm : forall (l : list nat) (lo hi : nat),
-    lo < hi -> hi < List.length l -> Permutation (sort l lo hi) l.
+    lo <= hi -> hi < List.length l -> Permutation (sort l lo hi) l.
 Proof.
     intros l. 
     induction l.
@@ -463,7 +451,7 @@ Proof.
 Admitted.
    
 Lemma sort_same_length : forall l lo hi,
-    lo < hi -> hi < List.length l -> length (sort l lo hi) = length l.
+    lo <= hi -> hi < List.length l -> length (sort l lo hi) = length l.
 Proof.
     intros. induction l.
     - simpl. rewrite sort_perm.
@@ -474,40 +462,33 @@ Proof.
     + lia.
     + simpl. simpl in H0. trivial.
 Qed.
-   
 
 Lemma sort_sorted_segment : forall (l : list nat) (lo hi : nat),
-   lo < hi -> hi < List.length l -> sorted_segment lo (hi+1) (sort l lo (hi)).
-   Proof.
+ lo <= hi -> hi <= List.length l -> sorted_segment lo hi (sort l lo (hi-1)).
+Proof.
     intros l. induction l.
     - intros. simpl in *.
-    inversion H0.
-    - intros. apply sorted_segment_cons.
-    + lia.
-    + rewrite sort_same_length.
+    inversion H0. subst. inversion H. subst. apply sorted_segment_nil. simpl. lia.
+    - intros. destruct H.
+    + apply sorted_segment_nil. rewrite sort_same_length.
     * lia.
-    * lia.
-    * trivial.
-    + admit.
-    + apply sorted_segment_smaller with (a:=a).
-    * lia.
-    * 
-
-   Admitted.
+    * admit.
+    * admit. 
+Admitted.
 
 
 Theorem quicksort_sorts:
-    forall l , sorted (quicksort l).
+   forall l , sorted (quicksort l).
 Proof.
-    intros l. induction l.
-    - trivial.
-    - unfold quicksort. apply start_end_sort. rewrite sort_same_length.
-    (* + apply sort_sorted_segment. *)
-    + admit.
-    + rewrite <- perm_shuffle_list. lia.
-    + rewrite <- perm_shuffle_list. lia. 
+   intros l. induction l.
+   - trivial.
+   - unfold quicksort. apply start_end_sort. rewrite sort_same_length.
+   + apply sort_sorted_segment.
+   * lia.
+   * lia.
+   + rewrite <- perm_shuffle_list. lia. 
+   + rewrite <- perm_shuffle_list. simpl. lia. 
 Qed.
-
 
 
 Extract Inductive nat => "int"
@@ -519,7 +500,7 @@ Extract Inductive nat => "int"
 Extract Inductive list => "Array.array" [ "[||]" "(::)" ].
 Extract Constant plus => "( + )".
 Extract Constant minus => "( - )".
-Extract Constant mult => "( - )".
+Extract Constant mult => "( * )".
 Extract Constant lookup => "Array.get".
 Extract Constant insert => "(fun xs i x -> Array.set xs i x; xs)".
 Extract Constant length => "Array.length".
