@@ -32,11 +32,11 @@ val fold_left : ('a1 -> 'a2 -> 'a1) -> 'a2 Array.array -> 'a1 -> 'a1
 
 val lookup : int Array.array -> int -> int
 
-val insert : int -> int -> int Array.array -> int Array.array
+val insert : int Array.array -> int -> int -> int Array.array
 
 val randnat : int -> int -> int
 
-val fst3 : ((int Array.array, int) prod, int) prod -> int Array.array
+val fst3 : (('a1, 'a2) prod, 'a3) prod -> 'a1
 
 val swap : int Array.array -> int -> int -> int Array.array
 

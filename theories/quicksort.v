@@ -38,27 +38,40 @@ Example lookup_example_higher_than_list :
     lookup [2;3;4;5;1;2] 10 = 0.
 Proof. simpl. reflexivity. Qed.
 
+Lemma lookup_elem: forall (l : list nat) (index elem : nat),
+index < List.length l -> In (lookup l index) l.
+Proof.
+    intros.
+Admitted.
 
-Fixpoint insert (elem : nat) (index : nat) (l : list nat) :=
+
+
+
+Fixpoint insert (l : list nat) (index : nat) (elem : nat) :=
 match (index, l) with
 | (0, x::xs) => elem :: xs
 | (0, []) => [elem] (* should never happen *)
-| (n, x::xs) => x :: (insert elem (index-1) xs)
+| (n, x::xs) => x :: (insert xs (index-1) elem)
 | (n, []) => [elem] (* should never happen *)
 end.
 
 Example insert_example1:
-    insert 3 1 [2;2;2] = [2;3;2].
+    insert [2;2;2] 1 3 = [2;3;2].
 Proof.
     trivial.
 Qed.
 
 Example insert_example2:
-    insert 3 0 [2] = [3].
+    insert [2] 0 3 = [3].
 Proof.
     trivial.
 Qed.
 
+Lemma insert_ele: forall (l : list nat)(index elem : nat),
+    index < List.length l -> lookup (insert l index elem) index = elem.
+Proof.
+    intros.
+Admitted.
 
 Fixpoint sublist (lo : nat) (hi : nat) (l : list nat) :=
     match (lo,hi,l) with
@@ -86,13 +99,27 @@ Qed.
 Definition randnat (seed : nat) (bound : nat) : nat :=
     (seed*31+7) mod bound.
 
-Definition fst3 (tuple : ((list nat)*nat*nat)) : list nat :=
+Lemma randnat_less: forall (seed bound : nat),
+    bound > 0 -> randnat seed bound < bound.
+Proof.
+    intros. unfold randnat. apply Nat.mod_bound_pos.
+    - lia.
+    - lia.
+Qed.
+
+Definition fst3 (A : Type) (B : Type) (C : Type) (tuple : (A*B*C)) : A :=
     match tuple with
     | (a,b,c) => a
     end.
 
+Lemma fst3_first: forall (A B C : Type) (a:A) (b:B) (c:C),
+    fst3 A B C (a,b,c) = a.
+Proof.
+    trivial.
+Qed.
+
 Definition swap (l : list nat) (i1 : nat) (i2 : nat) : list nat :=
-    insert (lookup l i2) i1 (insert (lookup l i1) i2 l).
+    insert (insert l i2 (lookup l i1)) i1 (lookup l i2).
 
 Example swap_example1:
     swap [1;2;3;4] 0 3 = [4;2;3;1].
@@ -106,9 +133,18 @@ Proof.
     trivial.
 Qed.
 
+Lemma swap_perm:
+    forall (l : list nat) (i0 i1 : nat),
+    i0 < List.length l -> i1 < List.length l -> Permutation l (swap l i0 i1).
+Proof.
+    intros. generalize dependent i0. generalize dependent i1. induction l.
+    - intros. simpl in H. lia.
+    - intros. simpl in *. unfold swap.
+Admitted. 
+
 
 Definition shuffle (l : list nat) : list nat :=
-    fst3 (List.fold_left (fun (acc : ((list nat)*nat*nat)) (a : nat) =>
+    fst3 (list nat) nat nat (List.fold_left (fun (acc : ((list nat)*nat*nat)) (a : nat) =>
             match acc with
             | (li,seed,point) => (swap li point (randnat seed (List.length li)) ,seed+1,point+1)
             end) l (l,42,0)).
@@ -119,6 +155,20 @@ Proof.
     reflexivity.
 Qed.
 
+
+
+
+Lemma perm_shuffle_list:
+    forall l, Permutation l (shuffle l).
+Proof.
+    intros. unfold shuffle.
+    - assert (forall (l : list nat) (i0 i1 : nat),
+    Permutation l (swap l i0 i1)).
+        + intros. apply swap_perm.
+            * admit.
+            * admit.
+        + 
+Admitted.
 
 (***************************************
             Quicksort code
@@ -143,6 +193,15 @@ Proof.
     reflexivity.
 Qed.
 
+
+Lemma partition_left_partitions : forall (l : list nat) (pivot lo hi j : nat),
+    lo <= hi -> hi < List.length l -> j < (partition_left l pivot lo hi) -> lookup l j < pivot.
+Proof.
+    Admitted.
+
+
+
+
 Program Fixpoint partition_right (l : list nat) (pivot : nat) (lo : nat) (hi : nat) {measure (hi-lo)} : nat :=
     match hi <=? lo with
         | true => hi
@@ -160,6 +219,14 @@ Example partition_right_example1:
 Proof.
     reflexivity.
 Qed.
+
+Lemma partition_right_partitions : forall (l : list nat) (pivot lo hi j : nat),
+    lo <= hi -> hi < List.length l -> j < List.length l -> (partition_right l pivot lo hi) < j -> pivot < lookup l j.
+Proof.
+    Admitted.
+
+
+
 
 
 Program Fixpoint partition (l : list nat) (pivot : nat) (lo : nat) (initial_lo : nat) (hi : nat) {measure (hi-lo)} : (nat*list nat) :=
@@ -179,6 +246,25 @@ symmetry in Heq_anonymous1. apply leb_complete_conv in Heq_anonymous1. symmetry 
 apply Nat.leb_le in Heq_anonymous. symmetry in Heq_anonymous2. apply Nat.leb_le in Heq_anonymous2.
 Admitted.
 
+Lemma partition_low : forall (l : list nat) (pivot lo initial_lo hi j : nat),
+initial_lo <= lo -> lo <= hi -> hi < List.length l -> lo <= j -> j < (fst(partition l pivot lo initial_lo hi)) -> (lookup (snd(partition l pivot lo initial_lo hi)) j < pivot).
+Proof.
+    intros.
+    Admitted.
+
+Lemma partition_high : forall (l : list nat) (pivot lo initial_lo hi i : nat),
+initial_lo <= lo -> lo <= hi -> hi < List.length l -> i <= hi -> fst(partition l pivot lo initial_lo hi) < i -> (pivot < lookup (snd(partition l pivot lo initial_lo hi)) i).
+Proof.
+    intros.
+    Admitted.
+
+Inductive sorted_segment : nat -> nat -> list nat -> Prop :=
+| sorted_segment_nil : forall x lst, x < List.length lst -> sorted_segment x x lst
+| sorted_segment_1 : forall x lst, x < List.length lst - 1 -> lst <> [] -> sorted_segment x (x + 1) lst
+| sorted_segment_cons : forall x y lst, x < y -> y < List.length lst ->
+    lookup lst x <= lookup lst (x + 1) -> sorted_segment (x + 1) y lst -> sorted_segment x y lst.
+
+Hint Constructors sorted_segment.
 
 Program Fixpoint sort (l : list nat) (lo : nat) (hi : nat) {measure (hi-lo)} : list nat :=
     match (hi <=? lo) with
@@ -202,6 +288,12 @@ apply Nat.leb_le in H0.
 lia.
 Qed.
 
+Lemma sort_sorted_seqment : forall (l : list nat) (lo hi : nat),
+ lo <= hi -> hi < List.length l -> sorted_segment lo hi (sort l lo hi).
+Proof.
+    intros.
+    Admitted.
+
 Definition quicksort (l : list nat) : list nat :=
     let shuffled := (shuffle l) in sort shuffled 0 (List.length shuffled - 1).
 
@@ -223,6 +315,7 @@ Example quicksort_example3:
 Proof.
     trivial.
 Qed.
+
 
 
 
@@ -265,113 +358,17 @@ Definition sorted'' (al : list nat) := forall i j,
 (* ################################################################# *)
 (** * Proof of Correctness *)
 
-
-Definition sublist_sorted (lo : nat) (hi : nat) (l : list nat) : Prop :=
-lo < hi -> 
-hi < (List.length l) ->
-sorted (sublist lo hi l).
-
-Inductive indexSorted : list nat -> nat -> nat -> Prop :=
-| indSorted_sorted : forall l lo hi,
-    sorted l -> indexSorted l lo hi
-| indSorted_trivial : forall l lo hi,
-    hi < lo -> indexSorted l lo hi
-| indSorted_sort : forall l lo hi,
-    sublist_sorted lo hi l -> indexSorted l lo hi.
-
-Hint Constructors indexSorted.
-
-Lemma swap_first:
-    forall (l : list nat) (i0 i1 a : nat),
-    0 < i0 < List.length (a::l) -> 0 < i1 < List.length (a::l) -> (swap (a::l) i0 i1) = a::(swap l i0 i1).
-Proof.
-    intros.
-Admitted.
-
-Lemma swap_same:
-    forall (l : list nat) (i0 i1 : nat),
-    i0 < List.length l -> i1 < List.length l -> i0 = i1 -> swap l i0 i1 = l.
-Proof.
-    intros. unfold swap. subst. unfold insert. unfold lookup. induction i1. 
-Admitted. 
-
-Lemma swap_perm:
-    forall (l : list nat) (i0 i1 : nat),
-    i0 < List.length l -> i1 < List.length l -> Permutation l (swap l i0 i1).
-Proof.
-    intros. induction l.
-    - unfold swap. simpl in H. lia.
-    - destruct i0.
-    + destruct i1.
-    * rewrite swap_same.
-    -- trivial.
-    -- trivial.
-    -- trivial.
-    -- trivial.
-    * admit.
-    + destruct i1.
-    * admit.
-    * rewrite swap_first.
-    -- apply perm_skip. apply IHl.
-    ++ admit.
-    ++ admit.
-    -- lia.
-    -- lia.
-Admitted. 
-
-Lemma perm_shuffle_list:
-    forall l, Permutation l (shuffle l).
-Proof.
-    intros. unfold shuffle.
-    - assert (forall (l : list nat) (i0 i1 : nat),
-    Permutation l (swap l i0 i1)).
-        + intros. apply swap_perm.
-            * admit.
-            * admit.
-        + 
-Admitted.
-
-Lemma Sort_btw_index :
-    forall l lo hi, 
-   lo < List.length l -> hi < List.length l -> indexSorted (sort l lo hi) lo hi.
-Proof.
-    intros. induction l.
-    - simpl in H. lia.
-    - apply indSorted_sort. unfold sublist_sorted. intros. simpl in *. assert (lo < length l). lia. apply IHl in H3.
-    unfold sublist.
-Admitted.
-
-Lemma index_sorted_cons :
-    forall (l : list nat) (a len : nat),
-    indexSorted (a::l) 0 len -> indexSorted l 0 (len-1).
-Proof.
-    intros. apply indSorted_sort. unfold sublist_sorted. intros.
-Admitted.
-
-Lemma index_sorted_first :
-    forall (l : list nat) (a b len : nat),
-    len >= 1 -> indexSorted (a::b::l) 0 len -> a <= b.
-Proof.
-    intros. inversion H0.
-    - inversion H1. apply H7.
-    - subst. lia.
-    - subst. unfold sublist_sorted in H1.
-Admitted.
-
 Lemma start_end_sort :
     forall l,
-    indexSorted l 0 (List.length l - 1) -> sorted l .
+    sorted_segment 0 (List.length l - 1) l -> sorted l .
 Proof.
     intros l H. induction l.
     - apply sorted_nil.
     - destruct l.
         + apply sorted_1.
         + apply sorted_cons.
-            * apply index_sorted_first in H.
-                -- apply H.
-                -- trivial. simpl. lia.
-            * apply IHl. apply index_sorted_cons with (a:=a). apply H.
-Qed.
+            * 
+Admitted.
 
 Lemma sort_perm : forall l,
     Permutation (sort l 0 (length l - 1)) l.
@@ -393,10 +390,12 @@ Lemma quicksort_sorts:
 Proof.
     intros l. induction l.
     - trivial.
-    - unfold quicksort. apply start_end_sort. rewrite sort_same_length. apply Sort_btw_index.
-    + admit.
-    + admit.
-Admitted.
+    - unfold quicksort. apply start_end_sort. rewrite sort_same_length. apply sort_sorted_seqment.
+    + lia.
+    + rewrite <- perm_shuffle_list. simpl. lia.
+Qed.
+
+
 
 Extract Inductive nat => "int"
  [ "0" "(fun x -> x + 1)" ]
@@ -404,10 +403,14 @@ Extract Inductive nat => "int"
  if n=0 then zero ()
  else succ (n-1))".
 
- Extract Inductive list => "Array.array" [ "[||]" "(::)" ].
- Extract Constant plus => "( + )".
- Extract Constant minus => "( - )".
- Extract Constant mult => "( - )".
+Extract Inductive list => "Array.array" [ "[||]" "(::)" ].
+Extract Constant plus => "( + )".
+Extract Constant minus => "( - )".
+Extract Constant mult => "( - )".
+Extract Constant lookup => "Array.get".
+Extract Constant insert => "(fun xs i x -> Array.set xs i x; xs)".
+Extract Constant length => "Array.length".
+Extract Constant fold_left => "(fun folder l acc -> Array.fold_left folder acc l)".
 Extract Inlined Constant leb => "(<=)".
 Extract Inductive bool => "bool" [ "true" "false" ].
 Extract Constant eqb => "( = )".

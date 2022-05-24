@@ -9,9 +9,7 @@ let snd = function
 
 (** val length : 'a1 Array.array -> int **)
 
-let rec length = function
-| [||] -> 0
-| _::l' -> (fun x -> x + 1) (length l')
+let rec length = Array.length
 
 type ('a, 'p) sigT =
 | ExistT of 'a * 'p
@@ -95,34 +93,15 @@ module Nat =
 
 (** val fold_left : ('a1 -> 'a2 -> 'a1) -> 'a2 Array.array -> 'a1 -> 'a1 **)
 
-let rec fold_left f l a0 =
-  match l with
-  | [||] -> a0
-  | b::t -> fold_left f t (f a0 b)
+let rec fold_left = (fun folder l acc -> Array.fold_left folder acc l)
 
 (** val lookup : int Array.array -> int -> int **)
 
-let rec lookup l i =
-  match l with
-  | [||] -> 0
-  | h::t -> if (<=) i 0 then h else lookup t (sub i ((fun x -> x + 1) 0))
+let rec lookup = Array.get
 
-(** val insert : int -> int -> int Array.array -> int Array.array **)
+(** val insert : int Array.array -> int -> int -> int Array.array **)
 
-let rec insert elem index l =
-  (fun zero succ n ->
-
- if n=0 then zero ()
-
- else succ (n-1))
-    (fun _ -> match l with
-              | [||] -> elem::[||]
-              | _::xs -> elem::xs)
-    (fun _ ->
-    match l with
-    | [||] -> elem::[||]
-    | x::xs -> x::(insert elem (sub index ((fun x -> x + 1) 0)) xs))
-    index
+let rec insert = (fun xs i x -> Array.set xs i x; xs)
 
 (** val randnat : int -> int -> int **)
 
@@ -143,7 +122,7 @@ let randnat seed bound =
       ((fun x -> x + 1) ((fun x -> x + 1) ((fun x -> x + 1) ((fun x -> x + 1)
       ((fun x -> x + 1) ((fun x -> x + 1) 0)))))))) bound
 
-(** val fst3 : ((int Array.array, int) prod, int) prod -> int Array.array **)
+(** val fst3 : (('a1, 'a2) prod, 'a3) prod -> 'a1 **)
 
 let fst3 = function
 | Pair (p, _) -> let Pair (a, _) = p in a
@@ -151,7 +130,7 @@ let fst3 = function
 (** val swap : int Array.array -> int -> int -> int Array.array **)
 
 let swap l i1 i2 =
-  insert (lookup l i2) i1 (insert (lookup l i1) i2 l)
+  insert (insert l i2 (lookup l i1)) i1 (lookup l i2)
 
 (** val shuffle : int Array.array -> int Array.array **)
 
