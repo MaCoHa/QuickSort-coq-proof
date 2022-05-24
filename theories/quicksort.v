@@ -289,7 +289,7 @@ lia.
 Qed.
 
 Lemma sort_sorted_seqment : forall (l : list nat) (lo hi : nat),
- lo <= hi -> hi <= List.length l -> sorted_segment lo hi (sort l lo (hi-1)).
+lo <= hi -> hi <= List.length l -> sorted_segment lo hi (sort l lo (hi-1)).
 Proof.
     intros.
     Admitted.
@@ -379,13 +379,51 @@ Proof.
     ++ lia.
 Qed.
 
-Lemma sort_perm : forall l,
-    Permutation (sort l 0 (length l - 1)) l.
+Lemma sort_nil:forall (l : list nat) (lo hi : nat),
+    l = [] -> sort l lo hi = [].
 Proof.
-    intros.
+intros.
+Admitted.  
+
+
+Lemma eqb_reflect : forall x y, reflect (x = y) (x =? y).
+Proof.
+  intros x y. apply iff_reflect. symmetry.
+  apply Nat.eqb_eq.
+Qed.
+
+Lemma ltb_reflect : forall x y, reflect (x < y) (x <? y).
+Proof.
+  intros x y. apply iff_reflect. symmetry.
+  apply Nat.ltb_lt.
+Qed.
+
+Lemma leb_reflect : forall x y, reflect (x <= y) (x <=? y).
+Proof.
+  intros x y. apply iff_reflect. symmetry.
+  apply Nat.leb_le.
+Qed.
+
+
+Hint Resolve ltb_reflect leb_reflect eqb_reflect : bdestruct.
+
+Ltac bdestruct X :=
+  let H := fresh in let e := fresh "e" in
+   evar (e: Prop);
+   assert (H: reflect e X); subst e;
+    [eauto with bdestruct
+    | destruct H as [H|H];
+       [ | try first [apply not_lt in H | apply not_le in H]]].
+
+Lemma sort_perm : forall (l : list nat) (lo hi : nat),
+    lo <= hi -> hi < List.length l -> Permutation (sort l lo hi) l.
+Proof.
+    intros l. 
     induction l.
-    - trivial.
-    -  
+    - intros. rewrite sort_nil.
+        + apply perm_nil.  
+        + trivial.
+    - unfold sort. unfold sort_func.
 Admitted.
 
 Lemma sort_same_length : forall l,
