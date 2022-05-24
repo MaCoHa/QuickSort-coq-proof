@@ -225,10 +225,6 @@ Lemma partition_right_partitions : forall (l : list nat) (pivot lo hi j : nat),
 Proof.
     Admitted.
 
-
-
-
-
 Program Fixpoint partition (l : list nat) (pivot : nat) (lo : nat) (initial_lo : nat) (hi : nat) {measure (hi-lo)} : (nat*list nat) :=
     match ((partition_left l pivot lo hi), (partition_right l pivot lo hi)) with
     | (i, j) => match j <=? i with
@@ -259,9 +255,9 @@ Proof.
     Admitted.
 
 Inductive sorted_segment : nat -> nat -> list nat -> Prop :=
-| sorted_segment_nil : forall x lst, x < List.length lst -> sorted_segment x x lst
-| sorted_segment_1 : forall x lst, x < List.length lst - 1 -> lst <> [] -> sorted_segment x (x + 1) lst
-| sorted_segment_cons : forall x y lst, x < y -> y < List.length lst ->
+| sorted_segment_nil : forall x lst, x <= List.length lst -> sorted_segment x x lst
+| sorted_segment_1 : forall x lst, x < List.length lst -> lst <> [] -> sorted_segment x (x + 1) lst
+| sorted_segment_cons : forall x y lst, x < y -> y <= List.length lst ->
     lookup lst x <= lookup lst (x + 1) -> sorted_segment (x + 1) y lst -> sorted_segment x y lst.
 
 Hint Constructors sorted_segment.
@@ -291,8 +287,12 @@ Qed.
 Lemma sort_sorted_seqment : forall (l : list nat) (lo hi : nat),
  lo <= hi -> hi <= List.length l -> sorted_segment lo hi (sort l lo (hi-1)).
 Proof.
-    intros.
-    Admitted.
+    intros l. induction l.
+    - intros. simpl in *.
+    inversion H0. subst. inversion H. subst. apply sorted_segment_nil. simpl. lia.
+    - intros. destruct H.
+    + apply sorted_segment_nil.
+Admitted.
 
 Definition quicksort (l : list nat) : list nat :=
     let shuffled := (shuffle l) in sort shuffled 0 (List.length shuffled - 1).
@@ -358,6 +358,41 @@ Definition sorted'' (al : list nat) := forall i j,
 (* ################################################################# *)
 (** * Proof of Correctness *)
 
+Lemma sorted_segment_smaller :
+    forall l lo hi a,
+    lo < hi -> sorted_segment (lo+1) (hi+1) (a::l) -> sorted_segment (lo) (hi) l.
+Proof.
+    intros l.
+    induction l.
+    - intros. inversion H0.
+    + lia.
+    + inversion H1.
+    * subst. simpl in *. lia.
+    + subst. simpl in *. destruct H2.
+    * inversion H4.
+    -- subst. simpl in *. lia. 
+    -- subst. simpl in *. lia.
+    -- subst. simpl in *. assert (hi = 1). lia. subst. lia.
+    * inversion H4.
+    -- subst. simpl in *. lia. 
+    -- subst. simpl in *. lia.
+    -- subst. simpl in *. assert (hi = 1). lia. subst. lia.
+    - intros. inversion H0.
+    + lia.
+    + simpl in *. subst. destruct lo.
+    * simpl in *. assert (hi = 1). lia. subst. apply sorted_segment_1.
+    -- simpl. lia.
+    -- apply not_eq_sym. apply nil_cons.
+    * simpl in *. assert (hi = S (S lo)). lia. subst. assert (S (S lo) = (S lo) + 1). lia. rewrite H3. apply sorted_segment_1.
+    -- simpl in *. lia.
+    -- apply not_eq_sym. apply nil_cons.
+    + subst. apply sorted_segment_cons.
+    * trivial.
+    * simpl in H2. rewrite Nat.add_1_r in H2. apply le_S_n in H2. simpl. apply H2.
+    * admit.
+    * admit.
+Admitted.
+
 Lemma start_end_sort :
     forall l,
     sorted_segment 0 (List.length l) l -> sorted l .
@@ -368,15 +403,9 @@ Proof.
     + apply sorted_1.
     + apply sorted_cons.
     * inversion H. subst. simpl in *. lia.
-    * inversion H. subst. simpl in *. apply IHl. inversion H3.
-    -- apply sorted_segment_1.
-    ++ lia.
-    ++ lia.
-    -- subst. simpl in *. apply sorted_segment_cons.
-    ++ lia.
-    ++ lia.
-    ++ lia.
-    ++ lia.
+    * inversion H. subst. simpl in *. apply IHl. apply sorted_segment_smaller with (a:=a).
+    -- lia.
+    -- simpl in *. rewrite Nat.add_1_r. apply H3.
 Qed.
 
 Lemma sort_perm : forall l,
