@@ -289,7 +289,7 @@ lia.
 Qed.
 
 Lemma sort_sorted_seqment : forall (l : list nat) (lo hi : nat),
- lo <= hi -> hi < List.length l -> sorted_segment lo hi (sort l lo hi).
+ lo <= hi -> hi <= List.length l -> sorted_segment lo hi (sort l lo (hi-1)).
 Proof.
     intros.
     Admitted.
@@ -360,15 +360,24 @@ Definition sorted'' (al : list nat) := forall i j,
 
 Lemma start_end_sort :
     forall l,
-    sorted_segment 0 (List.length l - 1) l -> sorted l .
+    sorted_segment 0 (List.length l) l -> sorted l .
 Proof.
     intros l H. induction l.
     - apply sorted_nil.
-    - destruct l.
-        + apply sorted_1.
-        + apply sorted_cons.
-            * 
-Admitted.
+    - induction l.
+    + apply sorted_1.
+    + apply sorted_cons.
+    * inversion H. subst. simpl in *. lia.
+    * inversion H. subst. simpl in *. apply IHl. inversion H3.
+    -- apply sorted_segment_1.
+    ++ lia.
+    ++ lia.
+    -- subst. simpl in *. apply sorted_segment_cons.
+    ++ lia.
+    ++ lia.
+    ++ lia.
+    ++ lia.
+Qed.
 
 Lemma sort_perm : forall l,
     Permutation (sort l 0 (length l - 1)) l.
@@ -376,7 +385,7 @@ Proof.
     intros.
     induction l.
     - trivial.
-    - 
+    -  
 Admitted.
 
 Lemma sort_same_length : forall l,
@@ -385,14 +394,14 @@ Proof.
     intros. apply Permutation_length. apply sort_perm.
 Qed.
 
-Lemma quicksort_sorts:
+Theorem quicksort_sorts:
     forall l , sorted (quicksort l).
 Proof.
     intros l. induction l.
     - trivial.
     - unfold quicksort. apply start_end_sort. rewrite sort_same_length. apply sort_sorted_seqment.
     + lia.
-    + rewrite <- perm_shuffle_list. simpl. lia.
+    + rewrite <- perm_shuffle_list. lia. 
 Qed.
 
 
